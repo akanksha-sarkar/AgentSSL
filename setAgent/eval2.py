@@ -91,7 +91,7 @@ def evaluate_agent(agent, val_img_dir, ground_truth):
         "fitness": acc,
     }
 
-def _eval(model, loader, eval_unsup=False):
+def _eval(model, loader, eval_unsup=False, scores=['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']):
     #model.eval()
     acc = 0.0
     dset_len = len(loader.dataset)
@@ -144,7 +144,7 @@ def _eval(model, loader, eval_unsup=False):
         # Lazy import: pulls sklearn + pytorch_adapt validators (heavy; can segfault if threaded BLAS misconfigured).
         from metrics.metrics import unsupervised_scores
 
-        eval_dict = unsupervised_scores(y_feats, y_logits, y_probs)
+        eval_dict = unsupervised_scores(y_feats, y_logits, y_probs, scores)
         eval_dict["acc"] = acc
     else:
         eval_dict = {'acc': acc}
@@ -170,7 +170,9 @@ if __name__ == "__main__":
     val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.test_transform)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
-    eval_dict, _, _, _, _, _ = _eval(agent, val_loader, eval_unsup=True)
+    possible_scores = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']
+    scores_to_use = ["ami"]
+    eval_dict, _, _, _, _, _ = _eval(agent, val_loader, eval_unsup=True, scores=scores_to_use)
 
     ground_truth = load_ground_truth(val_ann_file)
     eval_dict2 = evaluate_agent(agent, val_img_dir, ground_truth)
