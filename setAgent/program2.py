@@ -133,36 +133,29 @@ class ClassificationAgent:
                 loss.backward()
                 optimizer.step()
 
-    def predict(self, images):
+    def predict(self, image_batch):
             """
             Predict labels for a batch of PIL images.
 
             Input:
-                images: list[PIL.Image.Image]
+                image_batch: torch.Tensor
 
             Returns:
-                list[dict], where each dict is:
-                {
-                    "category_id": int,
-                    "score": float,
-                }
+                logits: torch.Tensor
+                features: torch.Tensor
+                predictions: list[dict]
             """
             if self.model is None:
                 raise RuntimeError("Model is not trained. Call fit() before predict().")
 
             self.model.eval()
 
-            batch_tensors = []
-            for image in images:
-                if image.mode != "RGB":
-                    image = image.convert("RGB")
-                x = self.test_transform(image)
-                batch_tensors.append(x)
-
-            x = torch.stack(batch_tensors, dim=0).to(self.device)
+            x = image_batch.to(self.device)
 
             with torch.no_grad():
-                logits = self.model(x)
+                feat_maps = self.model.features(x)
+                features = feat_maps.flatten(1)
+                logits = self.model.classifier(features)
                 probs = torch.softmax(logits, dim=1)
                 scores, pred_idxs = probs.max(dim=1)
 
@@ -174,4 +167,4 @@ class ClassificationAgent:
                     "score": float(score.item()),
                 })
 
-            return predictions
+            return logits, features, predictions

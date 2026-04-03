@@ -37,57 +37,64 @@ class ClassificationAgent:
         '''
         pass
 
-    def predict(self, image):
+    def predict(self, images):
         """
-        Predict a label for exactly one image.
+
+        TODO 
+        - logits --> prob/class 
+        - features --> 
+        Predict labels for a batch of images.
 
         Inputs:
-            image: PIL.Image.Image
-                A single image provided by the evaluator.
+            images: list[PIL.Image.Image]
+                A list of images provided by the evaluator.
 
-                The evaluator will call this function one image at a time.
+                The evaluator will call this function on batches of images.
                 Your code should treat this as inference only.
 
         Returns:
-            prediction: dict
-                A dictionary of the form:
+            predictions: list[dict]
+                A list of predictions, one per input image, in the SAME ORDER
+                as the input list.
+
+                Each prediction must be a dictionary of the form:
                     {
                         "category_id": int,   # required
                         "score": float        # optional but recommended
                     }
 
-                Required fields:
-                    - "category_id":
-                        The predicted class label as the ORIGINAL COCO
-                        category_id, not an internal class index unless they
-                        are identical.
+        Required fields (per prediction):
+            - "category_id":
+                The predicted class label as the ORIGINAL COCO category_id,
+                not an internal class index unless they are identical.
 
-                Optional fields:
-                    - "score":
-                        A confidence score for the prediction. Higher means more
-                        confident. This field is optional, but recommended.
+        Optional fields (per prediction):
+            - "score":
+                A confidence score for the prediction. Higher means more
+                confident.
 
         Example valid return:
-            {
-                "category_id": 5,
-                "score": 0.91
-            }
+            [
+                {"category_id": 5, "score": 0.91},
+                {"category_id": 2, "score": 0.77},
+                {"category_id": 8, "score": 0.66},
+            ]
 
         Notes:
-            - This function must return a prediction for exactly one image.
-            - Do not expect access to the full validation set here.
-            - Do not expect a filename, path, or annotation file here.
-            - The evaluator handles validation-set iteration and ground-truth
-              comparison outside your program.
+            - The length of the returned list MUST equal len(images).
+            - The i-th prediction must correspond to the i-th input image.
+            - Do not shuffle or reorder inputs internally unless you restore order.
+            - Do not assume access to filenames, paths, or annotations.
+            - The evaluator handles dataset iteration and ground-truth comparison.
 
         Important:
-            - If your model expects tensors, convert the PIL image inside this
-              function using your test/inference transform.
-            - If you use an internal label index, convert it back to the
-              original COCO category_id before returning.
+            - Convert each PIL image to a tensor using your test/inference transform.
+            - Stack inputs into a batch tensor before passing to the model.
+            - If using internal label indices, map them back to COCO category_id.
+            - This function must be side-effect free (no training, no state updates).
         """
-        return {
-            "category_id": 0,
-            "score": 1.0,
-        }
+        return [
+            {"category_id": 0, "score": 1.0}
+            for _ in images
+        ]
 ```

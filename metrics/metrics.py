@@ -1,8 +1,10 @@
 import torch
 import numpy as np
-from pytorch_adapt.validators import (
-    BNMValidator, SNDValidator, ClassClusterValidator, ClassClusterValidatorCached
-)
+# Import only what we need — avoid pytorch_adapt.validators.__init__ (loads every validator).
+from pytorch_adapt.validators.bnm_validator import BNMValidator
+from pytorch_adapt.validators.class_cluster_validator import ClassClusterValidator
+from pytorch_adapt.validators.class_cluster_validator_cached import ClassClusterValidatorCached
+from pytorch_adapt.validators.snd_validator import SNDValidator
 from torch.nn import functional as F
 from sklearn.metrics import (adjusted_rand_score, adjusted_mutual_info_score,
                              v_measure_score, fowlkes_mallows_score,

@@ -1,5 +1,5 @@
 """
-Evaluator for classification programs using a single-image predict interface.
+Evaluator for classification programs using a batched-image predict interface.
 """
 import sys
 import os
@@ -42,9 +42,13 @@ def load_ground_truth(val_ann_file):
     return gt
 
 
-def evaluate_agent(agent, val_img_dir, ground_truth):
+def evaluate_agent(agent, val_img_dir, ground_truth, batch_size=32):
     correct = 0
     total = 0
+
+    file_names = []
+    images = []
+    true_cats = []
 
     for file_name, true_cat in ground_truth.items():
         img_path = os.path.join(val_img_dir, file_name)
@@ -53,16 +57,31 @@ def evaluate_agent(agent, val_img_dir, ground_truth):
             continue
 
         image = Image.open(img_path).convert("RGB")
-        pred = agent.predict(image)
 
-        if not isinstance(pred, dict):
+        file_names.append(file_name)
+        images.append(image)
+        true_cats.append(true_cat)
+
+    for start in range(0, len(images), batch_size):
+        batch_images = images[start:start + batch_size]
+        batch_true_cats = true_cats[start:start + batch_size]
+
+        preds = agent.predict(batch_images)
+
+        if not isinstance(preds, list):
             continue
-        if "category_id" not in pred:
+        if len(preds) != len(batch_images):
             continue
 
-        total += 1
-        if pred["category_id"] == true_cat:
-            correct += 1
+        for pred, true_cat in zip(preds, batch_true_cats):
+            if not isinstance(pred, dict):
+                continue
+            if "category_id" not in pred:
+                continue
+
+            total += 1
+            if pred["category_id"] == true_cat:
+                correct += 1
 
     acc = correct / total if total > 0 else 0.0
 
@@ -70,7 +89,6 @@ def evaluate_agent(agent, val_img_dir, ground_truth):
         "top1_accuracy": acc,
         "fitness": acc,
     }
-
 
 
 if __name__ == "__main__":

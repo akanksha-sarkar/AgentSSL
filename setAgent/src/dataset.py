@@ -97,12 +97,23 @@ class ClassificationDataset(Dataset):
         self.transform = transform
         self.img_ids = os.listdir(self.img_dir)
 
-        # load the first json file in ann_dir
-        ann_files = sorted(self.ann_dir.glob("*.json"))
-        if len(ann_files) == 0:
-            raise FileNotFoundError(f"No .json files found in {self.ann_dir}")
-
-        ann_path = ann_files[0]
+        # ann_dir may be a directory (first *.json) or a direct path to a .json file
+        p = self.ann_dir
+        if p.suffix.lower() == ".json":
+            if not p.exists():
+                raise FileNotFoundError(f"Annotation file not found: {p}")
+            if not p.is_file():
+                raise FileNotFoundError(f"Annotation path is not a file: {p}")
+            ann_path = p
+        elif p.is_dir():
+            ann_files = sorted(p.glob("*.json"))
+            if len(ann_files) == 0:
+                raise FileNotFoundError(f"No .json files found in {p}")
+            ann_path = ann_files[0]
+        else:
+            raise FileNotFoundError(
+                f"Annotation path not found (use a .json file or a directory): {p}"
+            )
 
         # ---------- NEW: accept list-format annotations by converting to COCO ----------
         with open(ann_path, "r") as f:

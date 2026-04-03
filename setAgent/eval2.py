@@ -4,6 +4,7 @@ Evaluator for classification programs using a single-image predict interface.
 import sys
 import os
 
+# Before numpy/sklearn/torch: avoid OpenBLAS/MKL threading segfaults on some clusters.
 for _k, _v in (
     ("OMP_NUM_THREADS", "1"),
     ("MKL_NUM_THREADS", "1"),
@@ -70,7 +71,9 @@ def evaluate_agent(agent, val_img_dir, ground_truth):
             continue
 
         image = Image.open(img_path).convert("RGB")
-        pred = agent.predict(image)
+        x = agent.test_transform(image).unsqueeze(0)
+        _, _, predictions = agent.predict(x)
+        pred = predictions[0]
 
         if not isinstance(pred, dict):
             continue
@@ -89,7 +92,7 @@ def evaluate_agent(agent, val_img_dir, ground_truth):
     }
 
 def _eval(model, loader, eval_unsup=False):
-    model.eval()
+    #model.eval()
     acc = 0.0
     dset_len = len(loader.dataset)
     
@@ -107,27 +110,24 @@ def _eval(model, loader, eval_unsup=False):
 
     with torch.no_grad():
         # for data in loader:
-        for data in tqdm(loader):
-            image = data['x']
-            target = data['y']
+        for image, target in tqdm(loader):
 
             _n_data_processed += len(image)
 
-            image = image.type(torch.FloatTensor).cuda()
-            
-            feat, logit = model.predict(image)
-            feat = model(image, only_feat=True)
-            logit = model(feat, only_fc=True)
-            prob = logit.softmax(dim=-1)
+            image = image.float().to(model.device)
+
+            logits, feat, predictions = model.predict(image)
+            prob = logits.softmax(dim=-1)
             pred = prob.argmax(1)
 
-            acc += pred.cpu().eq(target).sum().item()
+            pred_cat_ids = torch.tensor([p["category_id"] for p in predictions])
+            acc += pred_cat_ids.eq(target).sum().item()
 
             y_feats.append(feat.cpu())
-            y_logits.append(logit.cpu())
+            y_logits.append(logits.cpu())
             y_pred.append(pred.cpu())
             y_probs.append(prob.cpu())
-            y_labels.append(target.cpu())
+            y_labels.append(target)
 
             n_processed += len(image)
     
@@ -141,8 +141,11 @@ def _eval(model, loader, eval_unsup=False):
     assert n_processed == dset_len, f"n_processed: {n_processed}, dset_len: {dset_len}"
     
     if eval_unsup:
+        # Lazy import: pulls sklearn + pytorch_adapt validators (heavy; can segfault if threaded BLAS misconfigured).
+        from metrics.metrics import unsupervised_scores
+
         eval_dict = unsupervised_scores(y_feats, y_logits, y_probs)
-        eval_dict['acc'] = acc
+        eval_dict["acc"] = acc
     else:
         eval_dict = {'acc': acc}
     return eval_dict, y_feats, y_logits, y_pred, y_probs, y_labels
@@ -164,11 +167,13 @@ if __name__ == "__main__":
 
     agent.fit(train_img_dir, train_ann_file)
 
-    val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=None)
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
+    val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.test_transform)
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
-    #eval_dict, _, _, _, _, _ = _eval(agent, val_loader, eval_unsup=True)
-    eval_dict2 = evaluate_agent(agent, val_img_dir, val_ann_file)
+    eval_dict, _, _, _, _, _ = _eval(agent, val_loader, eval_unsup=True)
 
-    #print("METRICS:", eval_dict)
+    ground_truth = load_ground_truth(val_ann_file)
+    eval_dict2 = evaluate_agent(agent, val_img_dir, ground_truth)
+
+    print("METRICS:", eval_dict)
     print("METRICS2:", eval_dict2)
