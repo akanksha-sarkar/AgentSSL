@@ -91,7 +91,7 @@ def evaluate_agent(agent, val_img_dir, ground_truth):
         "fitness": acc,
     }
 
-def _eval(model, loader, eval_unsup=False, scores=['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']):
+def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']):
     #model.eval()
     acc = 0.0
     dset_len = len(loader.dataset)
@@ -140,14 +140,12 @@ def _eval(model, loader, eval_unsup=False, scores=['rankme', 'ami', 'ari', 'v_me
     acc = acc / dset_len
     assert n_processed == dset_len, f"n_processed: {n_processed}, dset_len: {dset_len}"
     
-    if eval_unsup:
-        # Lazy import: pulls sklearn + pytorch_adapt validators (heavy; can segfault if threaded BLAS misconfigured).
-        from metrics.metrics import unsupervised_scores
+    # Lazy import: pulls sklearn + pytorch_adapt validators (heavy; can segfault if threaded BLAS misconfigured).
+    from metrics.metrics import unsupervised_scores
 
-        eval_dict = unsupervised_scores(y_feats, y_logits, y_probs, scores)
+    eval_dict = unsupervised_scores(y_feats, y_logits, y_probs, scores)
+    if sup_metric:
         eval_dict["acc"] = acc
-    else:
-        eval_dict = {'acc': acc}
     return eval_dict, y_feats, y_logits, y_pred, y_probs, y_labels
 
 if __name__ == "__main__":
@@ -172,7 +170,7 @@ if __name__ == "__main__":
 
     possible_scores = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']
     scores_to_use = ["ami"]
-    eval_dict, _, _, _, _, _ = _eval(agent, val_loader, eval_unsup=True, scores=scores_to_use)
+    eval_dict, _, _, _, _, _ = _eval(agent, val_loader, scores=scores_to_use)
 
     ground_truth = load_ground_truth(val_ann_file)
     #eval_dict2 = evaluate_agent(agent, val_img_dir, ground_truth)
