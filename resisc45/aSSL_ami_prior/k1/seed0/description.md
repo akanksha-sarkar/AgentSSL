@@ -6,10 +6,9 @@
 You are an AI agent tasked with implementing a **classification program** for an image dataset.  
 Your goal is to train (or otherwise derive) a classifier using the provided training dataset and produce **predicted labels for every image in the validation dataset**. 
 
-You have access to a limited training set, a validation set and a set of unlabelled datapoints. 
-CLIP and DINO-style pretrained backbones are likely to perform well on this classification task. Feature extraction with these encoders with added heads might be a good try before attempting heavier end-to-end training.
+You have access to a limited training set, a validation set and a set of unlabelled datapoints. CLIP and DINO-style pretrained backbones are likely to perform well on this classification task. Parameter efficient fine-tuning of these large backbones is likely a useful method as well.
 
-Your output will be evaluated using a standardized evaluation script which will return an unsupervised metric (adjusted mutual information) as the feedback. At the end of the evolution, the final program will be evaluated on the validation set. 
+Your output will be evaluated using a standardized evaluation script which will return an unsupervised proxy metric (adjusted mutual information) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set. 
 
 ### Dataset specification 
 A benchmark dataset of aerial RGB images depicting diverse land-use and scene categories. It contains 45 classes (e.g., urban areas, transportation infrastructure, natural landscapes). Each image is 256x256 pixels, and the dataset is balanced across classes. 
