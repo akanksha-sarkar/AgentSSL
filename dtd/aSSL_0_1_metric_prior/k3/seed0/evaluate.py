@@ -71,7 +71,7 @@ def evaluate_agent(agent, val_img_dir, ground_truth):
             continue
 
         image = Image.open(img_path).convert("RGB")
-        x = agent.test_transform(image).unsqueeze(0)
+        x = agent.transform(image).unsqueeze(0)
         _, _, predictions = agent.predict(x)
         pred = predictions[0]
 
@@ -213,7 +213,7 @@ if __name__ == "__main__":
 
     agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
 
-    val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.test_transform)
+    val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.transform)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     #possible_scores = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']

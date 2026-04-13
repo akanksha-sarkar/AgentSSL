@@ -88,6 +88,11 @@ class ClassificationAgent:
         self.model = None
         self.idx_to_cat_id = None
 
+        self.transform = T.Compose([
+            T.Resize((self.image_size, self.image_size)),
+            T.ToTensor(),
+        ])
+
         self.train_transform = T.Compose([
             T.Resize((self.image_size, self.image_size)),
             T.ToTensor(),

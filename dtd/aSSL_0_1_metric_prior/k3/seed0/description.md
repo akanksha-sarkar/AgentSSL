@@ -6,7 +6,7 @@
 You are an AI agent tasked with implementing a **classification program** for an image dataset.  
 Your goal is to train (or otherwise derive) a classifier using the provided training dataset and produce **predicted labels for every image in the validation dataset**. 
 
-You have access to a limited training set, a validation set and a set of unlabelled datapoints. CLIP and DINO-style pretrained backbones are likely to perform well on this classification task. Parameter efficient fine-tuning of these large backbones is likely a useful method as well.
+You have access to a limited training set, a validation set and a set of unlabelled datapoints. CLIP and DINO-style pretrained backbones are likely to perform well on this classification task. Parameter-efficient methods such as LoRA (accessed through the peft library) or adaptformer may be particularly effective for adapting these large models under limited supervision.
 
 Your output will be evaluated using a standardized evaluation script which will return a set of unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set. 
 
@@ -23,7 +23,7 @@ You must implement the following class in your program:
 
 class ClassificationAgent:
     def __init__(self):
-        pass
+        self.transform = pass # class must include self.transform
 
     def fit(self, img_dir, train_ann_file, unlabel_ann_file):
     """
