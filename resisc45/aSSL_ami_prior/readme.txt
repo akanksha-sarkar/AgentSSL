@@ -1,1 +1,1 @@
-Prior + only ami experiment 
+Prior + only ami experiment + greedy

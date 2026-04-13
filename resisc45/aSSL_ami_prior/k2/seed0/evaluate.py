@@ -169,12 +169,12 @@ if __name__ == "__main__":
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     possible_scores = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']
-    scores_to_use = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']
+    scores_to_use = ['ami']
     eval_dict, _, _, _, _, _ = _eval(agent, val_loader, scores=scores_to_use)
 
     ground_truth = load_ground_truth(val_ann_file)
     #eval_dict2 = evaluate_agent(agent, val_img_dir, ground_truth)
-    eval_dict["fitness"] = eval_dict[scores_to_use[0]]
+    eval_dict["fitness"] = eval_dict['ami']
 
     print("METRICS:", eval_dict)
     #print("METRICS2:", eval_dict2)
