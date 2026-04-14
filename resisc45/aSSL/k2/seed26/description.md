@@ -34,7 +34,7 @@ You must implement the following class in your program:
 
 class ClassificationAgent:
     def __init__(self):
-        pass
+        self.transform = pass
 
     def fit(self, img_dir, train_ann_file, unlabel_ann_file):
     """
