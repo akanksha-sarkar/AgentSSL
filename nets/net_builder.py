@@ -24,7 +24,7 @@ def get_net_builder(net_name, from_name: bool, peft_config=None, vit_config=None
         else:
             return nets.__dict__[net_name]
     else:
-        import src.nets as nets
+        import nets
         if net_name.startswith('timm/'):
             model_name = net_name.split('/')[1]
             def builder(*_args, **_kwargs):

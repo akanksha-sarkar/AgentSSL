@@ -171,8 +171,16 @@ if __name__ == "__main__":
     program = load_program(program_path)
 
     print("Loaded program...")
-    net_name_options = ["timm/vit_base_patch16_clip_224.openai","timm/vit_base_patch14_reg4_dinov2.lvd142m"]
-    agent = program.SSL_Algorithm(net_name_options=net_name_options)
+
+    from nets.net_builder import get_net_builder
+    from nets.peft import get_peft_config
+    agent = program.SSL_Algorithm(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config)
+    net_name_options = [ 
+                         "timm/vit_base_patch16_clip_224.openai",
+                         "timm/vit_base_patch14_reg4_dinov2.lvd142m"
+                       ]
+    assert agent.net_name in net_name_options, f"agent.net_name: {agent.net_name} is not in net_name_options: {net_name_options}"
+
     print("Created agent...")
     agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
     print("Fitted agent...")

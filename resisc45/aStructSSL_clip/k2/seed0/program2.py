@@ -16,10 +16,6 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as T
 
-from src.net_builder import get_net_builder
-from src.peft import get_peft_config
-
-
 def _coco_label_mapping(train_ann_file: str):
     with open(train_ann_file, "r") as f:
         coco = json.load(f)
@@ -63,18 +59,38 @@ class _LabeledDataset(Dataset):
 
 
 class SSL_Algorithm:
-    """Same backbone path as test.py (timm ViT-B/16 CLIP OpenAI + LoRA via net_builder)."""
+    
+    def __init__(self, net_builder_fn, get_peft_config_fn, train_epochs: int = 100, batch_size: int = 32, lr: float = 3e-4):
+        
+        self.net_name = "timm/vit_base_patch16_clip_224.openai"
+        
+        self.peft_config = get_peft_config_fn(
+            {
+                "method_name": "lora",
+                "lora_bottleneck": 4,
+                "freeze_backbone": False,
+            }
+        )
 
-    NET_NAME = "timm/vit_base_patch16_clip_224.openai"
+        self.vit_config = {"drop_path_rate": 0.0}  
 
-    def __init__(self, backbone=None, train_epochs: int = 100, batch_size: int = 32, lr: float = 3e-4):
-        # Injected timm backbone from evaluate.py is unused; weights come from seed0/pretrain_weight.
-        self._injected_backbone = backbone
+        net_builder = net_builder_fn(
+            self.net_name,
+            from_name=False,
+            peft_config=self.peft_config,
+            vit_config=self.vit_config,
+        )
+
+        self.model = net_builder(
+            num_classes=num_classes,
+            pretrained=True,
+            pretrained_path="",
+        ).to(self.device)
+        print("Loaded model")
         self.train_epochs = train_epochs
         self.batch_size = batch_size
         self.lr = lr
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = None
         self.transform = None
         self.idx_to_cat_id = None
         self.num_classes = 45
@@ -98,26 +114,6 @@ class SSL_Algorithm:
         cat_id_to_idx, idx_to_cat_id, num_classes = _coco_label_mapping(train_ann_file)
         self.idx_to_cat_id = idx_to_cat_id
         self.num_classes = num_classes
-
-        peft_config = get_peft_config(
-            {
-                "method_name": "lora",
-                "lora_bottleneck": 4,
-                "freeze_backbone": False,
-            }
-        )
-        vit_config = {"drop_path_rate": 0.0}
-        net_builder = get_net_builder(
-            self.NET_NAME,
-            from_name=False,
-            peft_config=peft_config,
-            vit_config=vit_config,
-        )
-        self.model = net_builder(
-            num_classes=num_classes,
-            pretrained=True,
-            pretrained_path="",
-        ).to(self.device)
 
         train_tf = T.Compose(
             [
