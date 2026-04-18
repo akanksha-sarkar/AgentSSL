@@ -15,6 +15,10 @@ class TimmViTWrapper(nn.Module):
         super(TimmViTWrapper, self).__init__()
         self.model = model
         self.num_features = self.model.num_features
+        # self._named_parameters = named_parameters
+    
+    # def named_parameters(self):
+    #     return zip(self._named_parameters.keys(), self._named_parameters.values())
 
     # Currently only support ViT based backbone
     def forward_features(self, x: torch.Tensor) -> torch.Tensor:

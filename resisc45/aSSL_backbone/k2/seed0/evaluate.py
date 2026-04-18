@@ -79,6 +79,7 @@ def evaluate_agent(agent, val_img_dir, ground_truth):
             continue
         if "category_id" not in pred:
             continue
+        print("Predictions: ", pred["category_id"], "True: ", true_cat)
 
         total += 1
         if pred["category_id"] == true_cat:
@@ -121,6 +122,7 @@ def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_me
             pred = prob.argmax(1)
 
             pred_cat_ids = torch.tensor([p["category_id"] for p in predictions])
+            print("Predictions: ", pred_cat_ids, "True: ", target)
             acc += pred_cat_ids.eq(target).sum().item()
 
             y_feats.append(feat.cpu())

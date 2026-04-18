@@ -11,80 +11,60 @@ Your output will be evaluated using a standardized evaluation script which will 
 ### Dataset specification 
 A benchmark dataset of aerial RGB images depicting diverse land-use and scene categories. It contains 45 classes (e.g., urban areas, transportation infrastructure, natural landscapes). Each image is 256x256 pixels and the dataset is balanced across classes. Your training dataset contains 2 images per class for a total of just 90 images. Your unlabeled dataset has 21915 datapoints. 
 
-### Model Requirement and Tuning Library
+### Model Interface
 
-You are required to ONLY use models through the interface below. You will also be provided a useful parameter-efficient finetuning (PEFT) library which can be set as shown below. 
+You MUST use the provided model builder.
 
-You will receive two functions **net_builder_fn** and **get_peft_config_fn** as an input to your class.
+#### Step-by-step usage
 
-    net_builder_fn(net_name, peft_config=None, vit_config=None):
-    """
-    built network according to network name
-    return **class** of backbone network (not instance).
-
-    Args
-        net_name: Must be one of the two options.
-        - CLIP-ViT-16-B: set net_name = "timm/vit_base_patch16_clip_224.openai"   
-        - DINOv2-B: set net_name = "timm/vit_base_patch14_reg4_dinov2.lvd142m"
-    """ 
-
-    get_peft_config_fn(peft_config)
-    """
-    Updates the default peft config with peft_config dictionary values. 
-    These are the default values:
-    _DEFAULT_PEFT_CONFIG = {
-        "ft_attn_module": None,
-        "ft_attn_mode": "parallel",
-        "ft_attn_ln": "before",
-        "ft_mlp_module": None,
-        "ft_mlp_mode": "parallel",
-        "ft_mlp_ln": "before",
-        "adapter_bottleneck": 64,
-        "adapter_init": "lora_kaiming",
-        "adapter_scaler": 0.1,
-        "convpass_bottleneck": 8,
-        "convpass_xavier_init": False,
-        "convpass_init": "lora_xavier",
-        "convpass_scaler": 10,
-        "vpt_mode": None,
-        "vpt_num": 10,
-        "vpt_layer": None,
-        "vpt_dropout": 0.1,
-        "vqt_num": 0,
-        "ssf": False,
-        "lora_bottleneck": 0,
-        "fact_dim": 8,
-        "fact_type": None,
-        "fact_scaler": 1.0,
-        "repadapter_bottleneck": 8,
-        "repadapter_init": "lora_xavier",
-        "repadapter_scaler": 1,
-        "repadapter_group": 2,
-        "bitfit": False,
-        "attention_type": "full",
-        "ln": False,
-        "difffit": False,
-        "freeze_backbone": False,
+1. Choose backbone:
+    net_name ∈ {
+        "timm/vit_base_patch16_clip_224.openai",   # CLIP
+        "timm/vit_base_patch14_reg4_dinov2.lvd142m" # DINOv2
     }
-    """
 
-The required way to access these models is as follows. 
-1. Choose from the provided backbones. 
-- CLIP-ViT-16-B: set *net_name* = "timm/vit_base_patch16_clip_224.openai"
-- DINOv2-B: set *net_name* = "timm/vit_base_patch14_reg4_dinov2.lvd142m"
-2. Set any PEFT configs to *peft_config* using **get_peft_config_fn**.
-3. Set any ViT configs to *vit_config*.
-4. Set *net_builder* with **net_builder_fn** (Remember it is a class not an instance).
-5. Set *self.model* with **net_builder** as shown below:
-```python
+2. Create PEFT config:
+    peft_config = get_peft_config_fn({...})
+
+PEFT options:
+Using Lora: { "method_name": "lora_1", "lora_bottleneck": 4 or 16 or .. }
+Using Adaptformer: {
+                    "method_name": "adaptformer", 
+                    "ft_mlp_module": "adapter",
+                    "ft_mlp_mode": "parallel",
+                    "ft_mlp_ln": "before",
+                    "adapter_init": "lora_kaiming",
+                    "adapter_bottleneck": 4 or 16,
+                    "adapter_scaler": 0.1
+                    }
+Frozen Backbone: {"freeze_backbone": True} (default is False)
+
+3. Set vit_config: 
+    vit_config = {"drop_path_rate": 0 or 0.2}
+4. Build model class:
+    net_builder = net_builder_fn(net_name, peft_config, vit_config)
+
+IMPORTANT: net_builder is a CLASS, not an instance.
+
+5. Instantiate:
     self.model = net_builder(
-                num_classes=num_classes,
-                pretrained=True,
-                pretrained_path="",
-            ).to(device)
-```
+        num_classes=num_classes,
+        pretrained=True,
+        pretrained_path=""
+    ).to(device)
 
----
+### Model Behavior (IMPORTANT)
+
+The model is a ViT wrapper with the following behavior:
+
+- `out = model(x)` returns:
+    - `out["feat"]`: pooled feature vector of shape (B, 768)
+    - `out["logits"]`: classification logits of shape (B, num_classes)
+
+Notes:
+- `feat` is already pooled (no need for CLS token extraction or pooling)
+- `logits` are raw (no softmax applied)
+- **IMPORTANT:** After instantiation, use trainable = [p for p in self.model.parameters() if p.requires_grad] to identify optimizable parameters. The model builder sets gradient flags to indicate what should be trained.
 
 ## Program Interface (Required)
 
@@ -143,7 +123,7 @@ class ClassificationAgent:
         Returns:
             logits: torch.Tensor
             features: torch.Tensor
-            predictions: list[dict]
+            predictions: list[dict] Must have "category_id" key as the label. 
         """
         pass
 

@@ -81,7 +81,6 @@ class SSL_Algorithm:
 
         net_builder = net_builder_fn(
             self.net_name,
-            from_name=False,
             peft_config=self.peft_config,
             vit_config=self.vit_config,
         )

@@ -172,7 +172,9 @@ if __name__ == "__main__":
 
     print("Loaded program...")
     # program2 builds the ViT+LoRA checkpoint path internally (same stack as test.py).
-    agent = program.SSL_Algorithm()
+    from nets.net_builder import get_net_builder
+    from nets.peft import get_peft_config
+    agent = program.SSL_Algorithm(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config)
     print("Created agent...")
     agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
     print("Fitted agent...")
