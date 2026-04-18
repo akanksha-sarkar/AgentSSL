@@ -8,7 +8,8 @@ Your goal is to train (or otherwise derive) a classifier using the provided trai
 
 You have access to a limited training set, a validation set and a set of unlabelled datapoints. CLIP and DINO-style pretrained backbones are likely to perform well on this classification task. Programs that use LoRA-based adaptation of pretrained CLIP or DINO-style backbones are especially encouraged. When using a transformer-based backbone, the agent should preferentially consider inserting LoRA adapters into attention projections or MLP layers rather than relying only on a frozen encoder with a linear probe.
 
-Your output will be evaluated using a standardized evaluation script which will return a limited proxy validation metric as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the full validation set. 
+
+Your output will be evaluated using a standardized evaluation script which will return a set of unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set. 
 
 ### Dataset specification 
 A synthetic image dataset consisting of simple 3D scenes populated with geometric objects such as spheres, cubes, and cylinders. Each object varies along interpretable attributes including color, size, material, and spatial position. For the classification task, labels are derived from object counts in the scene. 
