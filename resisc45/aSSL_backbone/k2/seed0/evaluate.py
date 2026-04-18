@@ -157,7 +157,7 @@ if __name__ == "__main__":
     # program_path = os.environ.get("PROGRAM_PATH", os.path.join(root_dir, "program.py"))
     # data_dir = os.environ.get("DATA_DIR", os.path.join("/data"))
 
-    root_dir = "/home/eyl45/Sun/AgentSSL/resisc45/aStructSSL_clip/k2/seed0"
+    root_dir = "/home/eyl45/Sun/AgentSSL/resisc45/aSSL_backbone/k2/seed0"
     data_dir = "/share/j_sun/agentSSL/resisc45/data"
     program_path = os.path.join(root_dir, "program2.py")
     
@@ -174,12 +174,12 @@ if __name__ == "__main__":
 
     from nets.net_builder import get_net_builder
     from nets.peft import get_peft_config
-    agent = program.SSL_Algorithm(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config)
-    net_name_options = [ 
-                         "timm/vit_base_patch16_clip_224.openai",
-                         "timm/vit_base_patch14_reg4_dinov2.lvd142m"
-                       ]
-    assert agent.net_name in net_name_options, f"agent.net_name: {agent.net_name} is not in net_name_options: {net_name_options}"
+    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config)
+    # net_name_options = [ 
+    #                      "timm/vit_base_patch16_clip_224.openai",
+    #                      "timm/vit_base_patch14_reg4_dinov2.lvd142m"
+    #                    ]
+    # assert agent.net_name in net_name_options, f"agent.net_name: {agent.net_name} is not in net_name_options: {net_name_options}"
 
     print("Created agent...")
     agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)

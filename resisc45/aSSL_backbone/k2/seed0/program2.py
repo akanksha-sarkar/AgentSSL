@@ -1,187 +1,250 @@
-"""
-Minimal SSL entrypoint for evaluate.py using the same TimmViT + LoRA stack as test.py.
-
-evaluate.py expects: SSL_Algorithm(...), .fit(img_dir, train_ann, unlabel_ann),
-.transform (PIL -> tensor), .device, .predict(batch_tensor) -> logits, feat, predictions
-where each prediction dict has key "category_id" matching COCO annotation ids.
-"""
-from __future__ import annotations
-
-import json
 import os
-
-from PIL import Image
+import json
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
-import torchvision.transforms as T
-
-from nets.net_builder import get_net_builder
-from nets.peft import get_peft_config
-
-
-def _coco_label_mapping(train_ann_file: str):
-    with open(train_ann_file, "r") as f:
-        coco = json.load(f)
-    cat_ids = sorted(c["id"] for c in coco["categories"])
-    cat_id_to_idx = {cid: i for i, cid in enumerate(cat_ids)}
-    idx_to_cat_id = {i: cid for cid, i in cat_id_to_idx.items()}
-    return cat_id_to_idx, idx_to_cat_id, len(cat_ids)
+from PIL import Image
+from torchvision import transforms
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
+import math
 
 
-def _labeled_samples(img_dir: str, train_ann_file: str, cat_id_to_idx: dict):
-    with open(train_ann_file, "r") as f:
-        coco = json.load(f)
-    id_to_name = {img["id"]: img["file_name"] for img in coco["images"]}
-    samples = []
-    for ann in coco["annotations"]:
-        fn = id_to_name.get(ann["image_id"])
-        if fn is None:
-            continue
-        path = os.path.join(img_dir, fn)
-        if not os.path.isfile(path):
-            continue
-        cid = ann["category_id"]
-        if cid not in cat_id_to_idx:
-            continue
-        samples.append((path, cat_id_to_idx[cid]))
-    return samples
-
-
-class _LabeledDataset(Dataset):
-    def __init__(self, samples, transform):
-        self.samples = samples
+class LabeledDataset(Dataset):
+    def __init__(self, image_paths, labels, transform):
+        self.image_paths = image_paths
+        self.labels = labels
         self.transform = transform
 
     def __len__(self):
-        return len(self.samples)
+        return len(self.image_paths)
 
     def __getitem__(self, idx):
-        path, y = self.samples[idx]
-        img = Image.open(path).convert("RGB")
-        return self.transform(img), y
+        img = Image.open(self.image_paths[idx]).convert("RGB")
+        return self.transform(img), self.labels[idx]
 
 
-class SSL_Algorithm:
-    """Same backbone path as test.py (timm ViT-B/16 CLIP OpenAI + LoRA via net_builder)."""
+def mixup_data(x, y, alpha=0.4):
+    """Returns mixed inputs, pairs of targets, and lambda."""
+    if alpha > 0:
+        lam = torch.distributions.Beta(alpha, alpha).sample().item()
+    else:
+        lam = 1.0
+    batch_size = x.size(0)
+    index = torch.randperm(batch_size, device=x.device)
+    mixed_x = lam * x + (1 - lam) * x[index]
+    return mixed_x, y, y[index], lam
 
-    NET_NAME = "timm/vit_base_patch16_clip_224.openai"
 
-    def __init__(self, backbone=None, train_epochs: int = 100, batch_size: int = 32, lr: float = 3e-4):
-        # Injected timm backbone from evaluate.py is unused; weights come from seed0/pretrain_weight.
-        self._injected_backbone = backbone
-        self.train_epochs = train_epochs
-        self.batch_size = batch_size
-        self.lr = lr
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = None
-        self.transform = None
-        self.idx_to_cat_id = None
-        self.num_classes = 45
+def mixup_criterion(criterion, pred, y_a, y_b, lam):
+    return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
-    def _eval_transform(self, img_size: int = 224):
-        resize = int(img_size * 256 / 224)
-        return T.Compose(
-            [
-                T.Resize(resize, interpolation=T.InterpolationMode.BICUBIC),
-                T.CenterCrop(img_size),
-                T.ToTensor(),
-                T.Normalize(
-                    mean=[0.48145466, 0.4578275, 0.40821073],
-                    std=[0.26862954, 0.26130258, 0.27577711],
-                ),
-            ]
-        )
 
-    def fit(self, img_dir, train_ann_file, unlabel_ann_file):
-
-        cat_id_to_idx, idx_to_cat_id, num_classes = _coco_label_mapping(train_ann_file)
-        self.idx_to_cat_id = idx_to_cat_id
+class ClassificationAgent:
+    def __init__(self, net_builder_fn, get_peft_config_fn, num_classes=45):
         self.num_classes = num_classes
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        peft_config = get_peft_config(
-            {
-                "method_name": "lora",
-                "lora_bottleneck": 4,
-                "freeze_backbone": False,
-            }
-        )
-        vit_config = {"drop_path_rate": 0.0}
-        net_builder = get_net_builder(
-            self.NET_NAME,
-            from_name=False,
-            peft_config=peft_config,
-            vit_config=vit_config,
-        )
+        # LoRA-style adapter on attention + MLP for lightweight fine-tuning
+        peft_config = get_peft_config_fn({
+            "freeze_backbone": False,
+            "ft_attn_module": "adapter",
+            "ft_attn_mode": "parallel",
+            "ft_attn_ln": "before",
+            "ft_mlp_module": "adapter",
+            "ft_mlp_mode": "parallel",
+            "ft_mlp_ln": "before",
+            "adapter_bottleneck": 32,
+            "adapter_init": "lora_kaiming",
+            "adapter_scaler": 0.1,
+            "lora_bottleneck": 8,
+            "ln": True,       # fine-tune layer norms
+            "bitfit": True,   # fine-tune biases
+        })
+
+        net_name = "timm/vit_base_patch14_reg4_dinov2.lvd142m"
+        net_builder = net_builder_fn(net_name, peft_config=peft_config)
         self.model = net_builder(
             num_classes=num_classes,
             pretrained=True,
             pretrained_path="",
         ).to(self.device)
 
-        train_tf = T.Compose(
-            [
-                T.RandomResizedCrop(224, scale=(0.7, 1.0), interpolation=T.InterpolationMode.BICUBIC),
-                T.RandomHorizontalFlip(),
-                T.ToTensor(),
-                T.Normalize(
-                    mean=[0.48145466, 0.4578275, 0.40821073],
-                    std=[0.26862954, 0.26130258, 0.27577711],
-                ),
-            ]
+        # Standard DINOv2 inference transform (no augmentation)
+        self.transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225]),
+        ])
+
+        # Heavy augmentation transform for training
+        self._train_transform = transforms.Compose([
+            transforms.RandomResizedCrop(224, scale=(0.4, 1.0)),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomRotation(30),
+            transforms.ColorJitter(brightness=0.4, contrast=0.4,
+                                   saturation=0.4, hue=0.1),
+            transforms.RandomGrayscale(p=0.1),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225]),
+            transforms.RandomErasing(p=0.3, scale=(0.02, 0.2)),
+        ])
+
+        self.category_id_to_name = {}
+        self.category_name_to_idx = {}
+        self.idx_to_category_id = {}
+
+    def fit(self, img_dir, train_ann_file, unlabel_ann_file,
+            epochs=200, batch_size=16, lr=3e-4, warmup_epochs=20):
+        # unlabel_ann_file intentionally ignored
+        print("[ClassificationAgent] Loading annotations...")
+
+        with open(train_ann_file, "r") as f:
+            train_ann = json.load(f)
+
+        for cat in train_ann["categories"]:
+            idx = len(self.category_name_to_idx)
+            self.category_id_to_name[cat["id"]] = cat["name"]
+            self.category_name_to_idx[cat["name"]] = idx
+            self.idx_to_category_id[idx] = cat["id"]
+
+        id_to_file = {img["id"]: img["file_name"] for img in train_ann["images"]}
+
+        image_paths, labels = [], []
+        for ann in train_ann["annotations"]:
+            cat_name = self.category_id_to_name[ann["category_id"]]
+            image_paths.append(os.path.join(img_dir, id_to_file[ann["image_id"]]))
+            labels.append(self.category_name_to_idx[cat_name])
+
+        labels_tensor = torch.tensor(labels, dtype=torch.long)
+        print(f"[ClassificationAgent] Labeled samples: {len(image_paths)}")
+
+        # Balanced sampler — ensures every class seen each effective epoch
+        class_counts = torch.bincount(labels_tensor, minlength=self.num_classes).float()
+        sample_weights = 1.0 / class_counts[labels_tensor]
+        sampler = WeightedRandomSampler(sample_weights, num_samples=len(image_paths), replacement=True)
+
+        dataset = LabeledDataset(image_paths, labels_tensor, self._train_transform)
+        loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler,
+                            num_workers=4, pin_memory=True, drop_last=True)
+
+        # Only optimize adapter/head parameters + layer norms + biases
+        # Frozen base weights stay frozen via requires_grad=False set by PEFT
+        optimizer = torch.optim.AdamW(
+            filter(lambda p: p.requires_grad, self.model.parameters()),
+            lr=lr, weight_decay=0.05
         )
-        self.transform = self._eval_transform(224)
 
-        samples = _labeled_samples(img_dir, train_ann_file, cat_id_to_idx)
-        if len(samples) == 0:
-            raise RuntimeError("No labeled samples found; check img_dir and train_ann_file.")
+        total_steps = epochs * len(loader)
+        warmup_steps = warmup_epochs * len(loader)
 
-        ds = _LabeledDataset(samples, train_tf)
-        bs = min(self.batch_size, len(ds))
-        loader = DataLoader(
-            ds,
-            batch_size=bs,
-            shuffle=True,
-            num_workers=min(4, os.cpu_count() or 0),
-            pin_memory=self.device.type == "cuda",
-            drop_last=False,
-        )
+        def lr_lambda(step):
+            if step < warmup_steps:
+                return step / max(1, warmup_steps)
+            progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)
+            return 0.5 * (1.0 + math.cos(math.pi * progress))
 
-        params = [p for p in self.model.parameters() if p.requires_grad]
-        opt = torch.optim.AdamW(params, lr=self.lr, weight_decay=0.05)
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+        criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+
+        print(f"[ClassificationAgent] Training for {epochs} epochs...")
         self.model.train()
-        for _ in range(self.train_epochs):
-            for x, y in loader:
-                x = x.to(self.device, non_blocking=True)
-                y = y.to(self.device, non_blocking=True)
-                opt.zero_grad(set_to_none=True)
-                out = self.model(x)
-                loss = F.cross_entropy(out["logits"], y)
+
+        for epoch in range(epochs):
+            total_loss, correct, total = 0.0, 0, 0
+
+            for imgs, lbls in loader:
+                imgs, lbls = imgs.to(self.device), lbls.to(self.device)
+
+                # Mixup augmentation
+                imgs, lbls_a, lbls_b, lam = mixup_data(imgs, lbls, alpha=0.4)
+
+                optimizer.zero_grad()
+                logits = self.model(imgs)
+                if isinstance(logits, (tuple, list)):
+                    logits = logits[0]
+
+                loss = mixup_criterion(criterion, logits, lbls_a, lbls_b, lam)
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(params, 1.0)
-                opt.step()
-            print(f"Epoch {_ + 1} loss: {loss.item()}")
+
+                torch.nn.utils.clip_grad_norm_(
+                    filter(lambda p: p.requires_grad, self.model.parameters()), 1.0
+                )
+                optimizer.step()
+                scheduler.step()
+
+                total_loss += loss.item()
+                preds = logits.argmax(dim=1)
+                # Accuracy against the dominant mixup label
+                correct += (lam * (preds == lbls_a).float() +
+                            (1 - lam) * (preds == lbls_b).float()).sum().item()
+                total += imgs.size(0)
+
+            if (epoch + 1) % 20 == 0:
+                acc = 100.0 * correct / total
+                avg_loss = total_loss / len(loader)
+                cur_lr = scheduler.get_last_lr()[0]
+                print(f"  Epoch [{epoch+1:>3}/{epochs}]  "
+                      f"loss: {avg_loss:.4f}  acc: {acc:.1f}%  lr: {cur_lr:.2e}")
 
         self.model.eval()
+        print("[ClassificationAgent] Training complete.")
 
     @torch.no_grad()
     def predict(self, image_batch):
-        if self.model is None:
-            raise RuntimeError("Call fit() before predict().")
+        if image_batch.ndim == 3:
+            image_batch = image_batch.unsqueeze(0)
+        image_batch = image_batch.to(self.device)
 
-        self.model.eval()
-        if isinstance(image_batch, torch.Tensor):
-            x = image_batch.float().to(self.device, non_blocking=True)
-        elif isinstance(image_batch, list):
-            x = torch.stack([self.transform(im.convert("RGB")) for im in image_batch], dim=0).to(
-                self.device, non_blocking=True
-            )
+        logits = self.model(image_batch)
+        if isinstance(logits, (tuple, list)):
+            logits = logits[0]
+
+        # Extract backbone features for the metrics that need them
+        feat = self._get_backbone_features(image_batch)
+
+        pred_scores = logits.softmax(dim=-1)
+        pred_labels = logits.argmax(dim=1)
+
+        predictions = []
+        for b in range(image_batch.shape[0]):
+            cls_idx = pred_labels[b].item()
+            cat_id = self.idx_to_category_id.get(cls_idx, cls_idx)
+            predictions.append({
+                "category_id": cat_id,
+                "category_name": self.category_id_to_name.get(cat_id, str(cat_id)),
+                "score": pred_scores[b, cls_idx].item(),
+            })
+
+        return logits.cpu(), feat.cpu(), predictions
+
+    @torch.no_grad()
+    def _get_backbone_features(self, imgs):
+        if hasattr(self.model, 'backbone') and hasattr(self.model.backbone, 'forward_features'):
+            feat = self.model.backbone.forward_features(imgs)
+        elif hasattr(self.model, 'forward_features'):
+            feat = self.model.forward_features(imgs)
         else:
-            raise TypeError("image_batch must be a Tensor or list of PIL images")
+            features = {}
+            hook = None
+            for name, module in reversed(list(self.model.named_modules())):
+                if isinstance(module, nn.LayerNorm) and 'head' not in name:
+                    hook = module.register_forward_hook(
+                        lambda m, inp, out: features.update({'feat': out})
+                    )
+                    break
+            self.model(imgs)
+            if hook:
+                hook.remove()
+            feat = features.get('feat', self.model(imgs))
 
-        out = self.model(x)
-        logits = out["logits"]
-        feat = out["feat"]
-        pred_idx = logits.argmax(dim=-1).detach().cpu().tolist()
-        predictions = [{"category_id": int(self.idx_to_cat_id[i])} for i in pred_idx]
-        return logits, feat, predictions
+        if isinstance(feat, dict):
+            feat = feat.get('x_norm_clstoken', next(iter(feat.values())))
+        elif isinstance(feat, (tuple, list)):
+            feat = feat[0]
+        if feat.ndim == 3:
+            feat = feat[:, 0]
+        return F.normalize(feat, dim=-1)
