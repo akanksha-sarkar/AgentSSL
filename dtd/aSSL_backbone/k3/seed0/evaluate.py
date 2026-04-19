@@ -176,7 +176,7 @@ if __name__ == "__main__":
 
     from nets.net_builder import get_net_builder
     from nets.peft import get_peft_config
-    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config)
+    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config, num_classes=47)
     # net_name_options = [ 
     #                      "timm/vit_base_patch16_clip_224.openai",
     #                      "timm/vit_base_patch14_reg4_dinov2.lvd142m"

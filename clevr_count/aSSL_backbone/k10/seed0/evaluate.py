@@ -167,7 +167,7 @@ if __name__ == "__main__":
     train_ann_file = os.path.join(root_dir, "annotations", "train", "train.json")
     unlabel_ann_file = os.path.join(root_dir, "annotations", "unlabelled", "unlabelled.json")
     val_img_dir = os.path.join(data_dir, "images", "val")
-    val_ann_file = os.path.join(data_dir, "annotations", "val", "val.json")
+    val_ann_file = os.path.join(data_dir, "annotations", "val", "val_500.json")
 
 
     program = load_program(program_path)
@@ -176,7 +176,7 @@ if __name__ == "__main__":
 
     from nets.net_builder import get_net_builder
     from nets.peft import get_peft_config
-    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config)
+    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config, num_classes=8)
     # net_name_options = [ 
     #                      "timm/vit_base_patch16_clip_224.openai",
     #                      "timm/vit_base_patch14_reg4_dinov2.lvd142m"
