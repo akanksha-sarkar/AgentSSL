@@ -21,7 +21,6 @@ You MUST use the provided model builder.
 1. Choose backbone:
     net_name ∈ {
         "timm/vit_base_patch16_clip_224.openai",   # CLIP
-        "timm/vit_base_patch14_reg4_dinov2.lvd142m" # DINOv2
     }
 
 2. Create PEFT config:
