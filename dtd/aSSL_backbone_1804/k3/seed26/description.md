@@ -9,8 +9,8 @@ You have access to a very small training set, a validation set and a set of unla
 Your output will be evaluated using a standardized evaluation script which will return a set of unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set. 
 
 ### Dataset specification 
-A synthetic image dataset consisting of simple 3D scenes populated with geometric objects such as spheres, cubes, and cylinders. Each object varies along interpretable attributes including color, size, material, and spatial position. For the classification task, labels are derived from object counts in the scene. There are 8 total classes. 
-Your training dataset contains 10 images per class for a total of just 80 images. Your unlabeled dataset has 48921 datapoints. 
+A texture recognition dataset consisting of real-world images annotated with human-interpretable texture attributes. It contains 47 categories (e.g., striped, dotted, fibrous, cracked), with 120 images per category, totaling 5,640 images. The images exhibit significant variation in scale, illumination, viewpoint, and background clutter.
+Your training dataset contains 3 images per class for a total of just 141 images. Your unlabeled dataset has 5,499 datapoints. 
 
 ### Model Interface
 
@@ -20,7 +20,6 @@ You MUST use the provided model builder.
 
 1. Choose backbone:
     net_name ∈ {
-        "timm/vit_base_patch16_clip_224.openai",   # CLIP
         "timm/vit_base_patch14_reg4_dinov2.lvd142m" # DINOv2
     }
 
@@ -137,7 +136,7 @@ The program you write will be used in the following way:
     program = load_program(program_path)
 
     print("Loaded program...")
-    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config=get_peft_config, num_classes=8)
+    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config=get_peft_config, num_classes=47)
     print("Created agent...")
     agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
     ...

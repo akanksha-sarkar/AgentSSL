@@ -21,7 +21,6 @@ You MUST use the provided model builder.
 1. Choose backbone:
     net_name ∈ {
         "timm/vit_base_patch16_clip_224.openai",   # CLIP
-        "timm/vit_base_patch14_reg4_dinov2.lvd142m" # DINOv2
     }
 
 2. Create PEFT config:
@@ -137,7 +136,7 @@ The program you write will be used in the following way:
     program = load_program(program_path)
 
     print("Loaded program...")
-    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config=get_peft_config, num_classes=8)
+    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config=get_peft_config)
     print("Created agent...")
     agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
     ...
