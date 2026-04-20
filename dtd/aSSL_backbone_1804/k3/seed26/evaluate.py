@@ -198,10 +198,12 @@ def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_me
 
 if __name__ == "__main__":
 
-    root_dir = os.environ.get("ROOT_DIR", "/work")
-    program_path = os.environ.get("PROGRAM_PATH", os.path.join(root_dir, "program.py"))
-    data_dir = os.environ.get("DATA_DIR", os.path.join("/data"))
-
+    # root_dir = os.environ.get("ROOT_DIR", "/work")
+    # program_path = os.environ.get("PROGRAM_PATH", os.path.join(root_dir, "program.py"))
+    # data_dir = os.environ.get("DATA_DIR", os.path.join("/data"))
+    root_dir = "/home/eyl45/Sun/AgentSSL/dtd/aSSL_backbone_1804/k3/seed26"
+    program_path = "/home/eyl45/Sun/AgentSSL/dtd/aSSL_backbone_1804/k3/seed26/program2.py"
+    data_dir = "/share/j_sun/agentSSL/dtd/data"
     train_img_dir = os.path.join(data_dir, "images", "train")
     train_ann_file = os.path.join(root_dir, "annotations", "train", "train.json")
     unlabel_ann_file = os.path.join(root_dir, "annotations", "unlabelled", "unlabelled.json")
@@ -225,7 +227,8 @@ if __name__ == "__main__":
     scores_to_use = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'bnm', 'snd']
 
 
-    eval_dict, _, _, _, _, _ = _eval(agent, val_loader, scores=scores_to_use)
+    eval_dict, _, _, _, _, _ = _eval(agent, val_loader, sup_metric=True, scores=scores_to_use)
+    print(f'acc: {eval_dict["acc"]}')
     eval_dict = calculate_fitness(eval_dict, scores_to_use)
 
     #ground_truth = load_ground_truth(val_ann_file)
