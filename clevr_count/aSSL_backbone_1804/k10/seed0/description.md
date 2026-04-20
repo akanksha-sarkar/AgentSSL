@@ -136,7 +136,7 @@ The program you write will be used in the following way:
     program = load_program(program_path)
 
     print("Loaded program...")
-    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config=get_peft_config)
+    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config=get_peft_config, num_classes=8)
     print("Created agent...")
     agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
     ...
