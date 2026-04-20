@@ -103,8 +103,6 @@ def calculate_fitness(eval_dict, scores_to_use):
         "v_measure":  {"range": (0.0, 1.0),  "higher_is_better": True},
         "fmi":        {"range": (0.0, 1.0),  "higher_is_better": True},
         "silhouette": {"range": (-1.0, 1.0), "higher_is_better": True},
-        #"dbi":        {"range": (0.0, 10.0), "higher_is_better": False},  # capped to 10
-        #"chi":        {"range": (0.0, 1000.0), "higher_is_better": True}, # capped to 1000
         "rankme":     {"range": (0.0, 1.0),  "higher_is_better": True},
         "bnm":        {"range": (0.0, 1.0),  "higher_is_better": True},  
         "snd":        {"range": (0.0, 1.0),  "higher_is_better": True},  
@@ -217,9 +215,6 @@ if __name__ == "__main__":
 
     val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.transform)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-
-    #possible_scores = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']
-    #scores_to_use = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']
 
     possible_scores = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'bnm', 'snd']
     scores_to_use = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'bnm', 'snd']

@@ -10,7 +10,7 @@ Your output will be evaluated using a standardized evaluation script which will 
 
 ### Dataset specification 
 A texture recognition dataset consisting of real-world images annotated with human-interpretable texture attributes. It contains 47 categories (e.g., striped, dotted, fibrous, cracked), with 120 images per category, totaling 5,640 images. The images exhibit significant variation in scale, illumination, viewpoint, and background clutter.
-Your training dataset contains 3 images per class for a total of just 141 images. Your unlabeled dataset has 5,499 datapoints. 
+Your training dataset contains 3 images per class for a total of just 141 images. Your unlabeled dataset has 1598 datapoints. 
 
 ### Model Interface
 
