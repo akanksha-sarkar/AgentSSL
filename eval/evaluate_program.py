@@ -33,6 +33,25 @@ from tqdm import tqdm
 
 from src.dataset import ClassificationDataset
 
+DATASET_JSON_PATH = os.path.join(os.path.dirname(__file__), "dataset.json")
+
+
+def get_num_classes(dataset_name: str, dataset_json_path: str = DATASET_JSON_PATH) -> int:
+    with open(dataset_json_path, "r") as f:
+        cfg = json.load(f)
+    if dataset_name not in cfg:
+        known = ", ".join(sorted(cfg.keys()))
+        raise KeyError(
+            f"Unknown dataset {dataset_name!r} in {dataset_json_path}. Known: {known}"
+        )
+    num = cfg[dataset_name].get("num_classes")
+    if not isinstance(num, int) or num <= 0:
+        raise ValueError(
+            f"Invalid num_classes for {dataset_name!r} in {dataset_json_path}: {num!r}"
+        )
+    return num
+
+
 def load_program(program_path):
     spec = importlib.util.spec_from_file_location("program", program_path)
     module = importlib.util.module_from_spec(spec)
@@ -146,7 +165,7 @@ def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_me
     # eval_dict = unsupervised_scores(y_feats, y_logits, y_probs, scores)
     # if sup_metric:
     eval_dict = {}
-    eval_dict["test_acc"] = acc
+    eval_dict["acc"] = acc
     return eval_dict
 
 if __name__ == "__main__":
@@ -155,50 +174,75 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--program-path", required=True, help="Path to the program .py file to evaluate")
     parser.add_argument("--root-dir", required=True, help="Root dir for the experiment (contains annotations/)")
-    parser.add_argument("--setting", default=None, help="Experiment setting: aSSL, aSL, agentSL. Inferred from --root-dir if omitted.")
+    parser.add_argument("--learning", default=None, help="Experiment setting: SSL or SL")
     parser.add_argument("--out-file", default=None, help="If set, write JSON result to this file instead of (only) stdout")
+    parser.add_argument("--dataset", default="resisc45", help="Dataset name")
+    parser.add_argument("--eval_type", default="test", help="Evaluation type: test or val")
     args = parser.parse_args()
 
     root_dir = args.root_dir
     program_path = args.program_path
-    data_dir = "/share/j_sun/agentSSL/clevr_count/data"
+    data_dir = f"/share/j_sun/agentSSL/{args.dataset}/data"
+    num_classes = get_num_classes(args.dataset)
 
     # Infer setting from root_dir path if not provided
-    if args.setting is not None:
-        setting = args.setting
+    if args.learning is not None:
+        learning = args.learning
     else:
-        parts = os.path.normpath(root_dir).split(os.sep)
-        setting = next((p for p in parts if p in ("aSSL", "aSL", "agentSL")), "aSL")
-        
+        raise ValueError("Learning (SL or SSL) is required")
+    
+    if args.eval_type is not None:
+        eval_type = args.eval_type
+    else:
+        raise ValueError("Evaluation type (test or val) is required")
 
     train_img_dir = os.path.join(data_dir, "images", "train")
     train_ann_file = os.path.join(root_dir, "annotations", "train", "train.json")
 
-    test_dir = "/share/j_sun/agentSSL/clevr_count/test"
-
-    test_img_dir = os.path.join(test_dir, "images")
-    test_ann_file = os.path.join(test_dir, "annotations", "test.json")
+    if eval_type == "test":
+        eval_dir = f"/share/j_sun/agentSSL/{args.dataset}/test"
+        eval_img_dir = os.path.join(eval_dir, "images")
+        eval_ann_file = os.path.join(eval_dir, "annotations", "test.json")
+    elif eval_type == "val":
+        eval_img_dir = os.path.join(data_dir, "images", "val")
+        eval_ann_file = os.path.join(data_dir, "annotations", "val", "val.json")
+    else:
+        raise ValueError("Evaluation type (test or val) is required")
 
     unlabel_ann_file = os.path.join(root_dir, "annotations", "unlabelled", "unlabelled.json")
 
-    print(f"setting:      {setting}")
+    print(f"learning:     {learning}")
     print(f"root_dir:     {root_dir}")
     print(f"program_path: {program_path}")
+    print(f"eval_type:    {eval_type}")
+    print(f"dataset:      {args.dataset}")
+    print(f"num_classes:  {num_classes}")
 
     program = load_program(program_path)
 
     from nets.net_builder import get_net_builder
     from nets.peft import get_peft_config
-    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config, num_classes=8)
+    agent = program.ClassificationAgent(
+        net_builder_fn=get_net_builder,
+        get_peft_config_fn=get_peft_config,
+        num_classes=num_classes,
+    )
 
-    agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
+    if learning == "SSL":
+        agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
+    elif learning == "SL":
+        agent.fit(train_img_dir, train_ann_file)
+    else:
+        raise ValueError("Learning (SL or SSL) is required")
 
-    test_dataset = ClassificationDataset(test_img_dir, test_ann_file, transform=agent.transform)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+    eval_dataset = ClassificationDataset(
+        eval_img_dir, eval_ann_file, transform=agent.transform
+    )
+    eval_loader = DataLoader(eval_dataset, batch_size=32, shuffle=False)
 
-    eval_dict = _eval(agent, test_loader)
+    eval_dict = _eval(agent, eval_loader)
 
-    print("METRICS:", eval_dict)
+    print("METRICS:", {f'{eval_type}_acc': eval_dict["acc"]})
 
     if args.out_file:
         os.makedirs(os.path.dirname(os.path.abspath(args.out_file)), exist_ok=True)

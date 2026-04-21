@@ -6,11 +6,11 @@ and saves results to all_test_results.json keyed by node id.
 
 Usage:
     python validate_run_all.py \
-        --log-dir /share/j_sun/as2637/logs/clevr_count/aSSL_0_1_metric_priorlora2_mcts/k10/seed0/aira/1111
+        --log-dir /share/j_sun/as2637/logs/resisc45/aSL/k1/seed0/aide/1000
 
 Path conventions:
-    log_dir:  /share/j_sun/as2637/logs/clevr_count/{setting}/{k}/{seed}/aide/{run_id}
-    root_dir: /home/as2637/agentSSL/clevr_count/{setting}/{k}/{seed}
+    log_dir:  /share/j_sun/as2637/logs/resisc45/{setting}/{k}/{seed}/aide/{run_id}
+    root_dir: /home/as2637/agentSSL/resisc45/{setting}/{k}/{seed}
 """
 
 import argparse
@@ -21,21 +21,34 @@ from pathlib import Path
 
 
 TEST_DIR = Path(__file__).parent
-ROOT_BASE = Path("/home/as2637/agentSSL/clevr_count")
-EVALUATE_PY = TEST_DIR / "evaluate.py"
 
 
-def parse_log_dir(log_dir: Path):
+def infer_dataset_from_log_dir(log_dir: Path) -> str:
+    """
+    Infer dataset name from a log_dir like:
+      /share/j_sun/as2637/logs/<dataset>/<setting>/<k>/<seed>/aira/<run_id>
+    """
     parts = log_dir.parts
     try:
-        clevr_count_idx = next(i for i, p in enumerate(parts) if p == "clevr_count")
+        logs_idx = next(i for i, p in enumerate(parts) if p == "logs")
     except StopIteration:
-        raise ValueError(f"Could not find 'clevr_count' in path: {log_dir}")
-    setting = parts[clevr_count_idx + 1]
-    k       = parts[clevr_count_idx + 2]
-    seed    = parts[clevr_count_idx + 3]
-    run_id  = parts[clevr_count_idx + 5]
-    root_dir = ROOT_BASE / setting / k / seed
+        raise ValueError(f"Could not infer dataset (no 'logs' segment) from: {log_dir}")
+    if logs_idx + 1 >= len(parts):
+        raise ValueError(f"Could not infer dataset (nothing after 'logs') from: {log_dir}")
+    return parts[logs_idx + 1]
+
+
+def parse_log_dir(log_dir: Path, root_base: Path, args: argparse.Namespace):
+    parts = log_dir.parts
+    try:
+        dataset_idx = next(i for i, p in enumerate(parts) if p == args.dataset)
+    except StopIteration:
+        raise ValueError(f"Could not find '{args.dataset}' in path: {log_dir}")
+    setting = parts[dataset_idx + 1]
+    k       = parts[dataset_idx + 2]
+    seed    = parts[dataset_idx + 3]
+    run_id  = parts[dataset_idx + 5]
+    root_dir = root_base / setting / k / seed
     return setting, k, seed, run_id, root_dir
 
 
@@ -56,12 +69,30 @@ def load_journal(log_dir: Path):
     raise FileNotFoundError(f"No journal found in {log_dir}")
 
 
-def run_eval(program_path: Path, root_dir: Path, setting: str, out_file: Path) -> dict:
+def infer_learning_from_setting(setting: str) -> str:
+    # aSL* (but not aSSL*) -> SL, else -> SSL
+    if setting.startswith("aSL") and not setting.startswith("aSSL"):
+        return "SL"
+    return "SSL"
+
+
+def run_eval(
+    program_path: Path,
+    root_dir: Path,
+    out_file: Path,
+    evaluate_py: Path,
+    *,
+    dataset: str,
+    learning: str,
+    eval_type: str,
+) -> dict:
     cmd = [
-        sys.executable, str(EVALUATE_PY),
+        sys.executable, str(evaluate_py),
         "--program-path", str(program_path),
         "--root-dir",     str(root_dir),
-        "--setting",      setting,
+        "--learning",     learning,
+        "--dataset",      dataset,
+        "--eval_type",    eval_type,
         "--out-file",     str(out_file),
     ]
     print(f"Running: {' '.join(cmd)}", flush=True)
@@ -78,15 +109,33 @@ def run_eval(program_path: Path, root_dir: Path, setting: str, out_file: Path) -
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-dir", required=True)
-    parser.add_argument("--out", default=None,
-                        help="Output JSON file (default: <log-dir>/all_test_results.json)")
+    parser.add_argument("--out", default=None, help="Output JSON file (default: <log-dir>/all_test_results.json)")
+    parser.add_argument(
+        "--dataset",
+        default=None,
+        help="Dataset name (if omitted, inferred from --log-dir, e.g. .../logs/dtd/...)",
+    )
+    parser.add_argument("--eval-type", default="test", choices=["test", "val"], help="Which split to evaluate")
     args = parser.parse_args()
 
     log_dir = Path(args.log_dir).resolve()
-    setting, k, seed, run_id, root_dir = parse_log_dir(log_dir)
+    if args.dataset is None:
+        args.dataset = infer_dataset_from_log_dir(log_dir)
 
+    BASE = Path("/home/as2637/agentSSL")
+    root_base = BASE / args.dataset
+    evaluate_py = Path("/share/j_sun/as2637/logs/eval/evaluate_program.py")
+
+    setting, k, seed, run_id, root_dir = parse_log_dir(log_dir, root_base, args)
+    learning = infer_learning_from_setting(setting)
+
+    print(f"dataset: {args.dataset}")
     print(f"setting: {setting}, k: {k}, seed: {seed}, run_id: {run_id}")
     print(f"root_dir: {root_dir}")
+    print(f"root_base: {root_base}")
+    print(f"evaluate_py: {evaluate_py}")
+    print(f"learning: {learning}")
+    print(f"eval_type: {args.eval_type}")
 
     entries = load_journal(log_dir)
 
@@ -127,7 +176,15 @@ def main():
             f.write(code)
 
         out_file = prog_dir / f"eval_step{step:04d}_{node_id[:8]}.json"
-        metrics = run_eval(program_path, root_dir, setting, out_file)
+        metrics = run_eval(
+            program_path,
+            root_dir,
+            out_file,
+            evaluate_py,
+            dataset=args.dataset,
+            learning=learning,
+            eval_type=args.eval_type,
+        )
         metrics["step"]         = step
         metrics["id"]           = node_id
         metrics["train_metric"] = metric

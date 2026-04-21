@@ -1,8 +1,13 @@
 """
 Evaluator for classification programs using a single-image predict interface.
+Metric: unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette)
+Setting: SSL
 """
 import sys
 import os
+
+# Replaced by setup/setup.py from setup/dataset.json (num_classes for this dataset)
+NUM_CLASSES = 45
 
 # Before numpy/sklearn/torch: avoid OpenBLAS/MKL threading segfaults on some clusters.
 for _k, _v in (
@@ -71,7 +76,7 @@ def evaluate_agent(agent, val_img_dir, ground_truth):
             continue
 
         image = Image.open(img_path).convert("RGB")
-        x = agent.test_transform(image).unsqueeze(0)
+        x = agent.transform(image).unsqueeze(0)
         _, _, predictions = agent.predict(x)
         pred = predictions[0]
 
@@ -90,6 +95,53 @@ def evaluate_agent(agent, val_img_dir, ground_truth):
         "top1_accuracy": acc,
         "fitness": acc,
     }
+
+def calculate_fitness(eval_dict, scores_to_use):
+    """
+    Normalize each metric using predefined global ranges and compute mean fitness.
+    """
+
+    # Define ranges and direction (True = higher is better)
+    METRIC_INFO = {
+        "ami":        {"range": (-1.0, 1.0), "higher_is_better": True},
+        "ari":        {"range": (-1.0, 1.0), "higher_is_better": True},
+        "v_measure":  {"range": (0.0, 1.0),  "higher_is_better": True},
+        "fmi":        {"range": (0.0, 1.0),  "higher_is_better": True},
+        "silhouette": {"range": (-1.0, 1.0), "higher_is_better": True},
+
+        "rankme":     {"range": (0.0, 1.0),  "higher_is_better": True},
+        "bnm":        {"range": (0.0, 1.0),  "higher_is_better": True},  
+        "snd":        {"range": (0.0, 1.0),  "higher_is_better": True},  
+    }
+
+    normalized = []
+
+    for s in scores_to_use:
+        if s not in METRIC_INFO:
+            raise ValueError(f"No normalization info for metric: {s}")
+
+        v = eval_dict[s]
+        min_val, max_val = METRIC_INFO[s]["range"]
+        higher_is_better = METRIC_INFO[s]["higher_is_better"]
+
+        # clip to range to avoid exploding values
+        v = max(min(v, max_val), min_val)
+
+        # normalize to [0,1]
+        if max_val - min_val == 0:
+            norm = 0.0
+        else:
+            norm = (v - min_val) / (max_val - min_val)
+
+        # invert if lower is better
+        if not higher_is_better:
+            norm = 1.0 - norm
+
+        normalized.append(norm)
+
+    fitness = sum(normalized) / len(normalized)
+    eval_dict["fitness"] = fitness
+    return eval_dict
 
 def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']):
     #model.eval()
@@ -141,63 +193,39 @@ def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_me
     assert n_processed == dset_len, f"n_processed: {n_processed}, dset_len: {dset_len}"
     
     # Lazy import: pulls sklearn + pytorch_adapt validators (heavy; can segfault if threaded BLAS misconfigured).
-    #from metrics.metrics import unsupervised_scores
+    from metrics.metrics import unsupervised_scores
 
-    # eval_dict = unsupervised_scores(y_feats, y_logits, y_probs, scores)
-    # if sup_metric:
-    eval_dict = {}
-    eval_dict["test_acc"] = acc
-    return eval_dict
+    eval_dict = unsupervised_scores(y_feats, y_logits, y_probs, scores)
+    if sup_metric:
+        eval_dict["acc"] = acc
+    return eval_dict, y_feats, y_logits, y_pred, y_probs, y_labels
 
 if __name__ == "__main__":
-    import argparse
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--program-path", required=True, help="Path to the program .py file to evaluate")
-    parser.add_argument("--root-dir", required=True, help="Root dir for the experiment (contains annotations/)")
-    parser.add_argument("--setting", default=None, help="Experiment setting: aSSL, aSL, agentSL. Inferred from --root-dir if omitted.")
-    parser.add_argument("--out-file", default=None, help="If set, write JSON result to this file instead of (only) stdout")
-    args = parser.parse_args()
-
-    root_dir = args.root_dir
-    program_path = args.program_path
-    data_dir = "/share/j_sun/agentSSL/clevr_count/data"
-
-    # Infer setting from root_dir path if not provided
-    if args.setting is not None:
-        setting = args.setting
-    else:
-        parts = os.path.normpath(root_dir).split(os.sep)
-        setting = next((p for p in parts if p in ("aSSL", "aSL", "agentSL")), "aSL")
-        
+    root_dir = os.environ.get("ROOT_DIR", "/work")
+    program_path = os.environ.get("PROGRAM_PATH", os.path.join(root_dir, "program.py"))
+    data_dir = os.environ.get("DATA_DIR", os.path.join("/data"))
 
     train_img_dir = os.path.join(data_dir, "images", "train")
     train_ann_file = os.path.join(root_dir, "annotations", "train", "train.json")
-
-    test_dir = "/share/j_sun/agentSSL/clevr_count/test"
-
-    test_img_dir = os.path.join(test_dir, "images")
-    test_ann_file = os.path.join(test_dir, "annotations", "test.json")
-
     unlabel_ann_file = os.path.join(root_dir, "annotations", "unlabelled", "unlabelled.json")
-
-    print(f"setting:      {setting}")
-    print(f"root_dir:     {root_dir}")
-    print(f"program_path: {program_path}")
+    val_img_dir = os.path.join(data_dir, "images", "val")
+    val_ann_file = os.path.join(data_dir, "annotations", "val", "val.json")
 
     program = load_program(program_path)
-    agent = program.ClassificationAgent()
+    from nets.net_builder import get_net_builder
+    from nets.peft import get_peft_config
+    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config, num_classes=NUM_CLASSES)
 
     agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
 
-    test_dataset = ClassificationDataset(test_img_dir, test_ann_file, transform=agent.transform)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+    val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.transform)
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
-    eval_dict = _eval(agent, test_loader)
+    possible_scores = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'bnm', 'snd']
+    scores_to_use = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'bnm', 'snd']
+
+    eval_dict, _, _, _, _, _ = _eval(agent, val_loader, scores=scores_to_use)
+    eval_dict = calculate_fitness(eval_dict, scores_to_use)
 
     print("METRICS:", eval_dict)
-
-    if args.out_file:
-        os.makedirs(os.path.dirname(os.path.abspath(args.out_file)), exist_ok=True)
-        with open(args.out_file, "w") as f:
-            json.dump(eval_dict, f, indent=2)
