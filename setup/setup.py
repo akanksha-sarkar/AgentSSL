@@ -83,14 +83,15 @@ def _annotations_source(
 
 
 def _warmstart_program_source(
-    setup_dir: Path, setup_subdir: str, split: str
+    setup_dir: Path, dataset: str, metric: str, split: str
 ) -> Path:
-    return setup_dir / "warmstart" / setup_subdir / split / "warm_start_program.py"
+    return setup_dir / "warmstart" / dataset / metric / split / "warm_start_program.py"
 
 
 def _copy_warmstart_program(
     setup_dir: Path,
-    setup_subdir: str,
+    dataset: str,
+    metric: str,
     split: str,
     target: Path,
     *,
@@ -99,12 +100,12 @@ def _copy_warmstart_program(
     skip: bool,
 ) -> int:
     """
-    Copy setup/warmstart/{setup_subdir}/{split}/warm_start_program.py -> target/warm_start_program.py.
+    Copy setup/warmstart/{dataset}/{metric}/{split}/warm_start_program.py -> target/warm_start_program.py.
     Returns 0 on success or skip, 1 on error.
     """
     if skip:
         return 0
-    warm_src = _warmstart_program_source(setup_dir, setup_subdir, split)
+    warm_src = _warmstart_program_source(setup_dir, dataset, metric, split)
     dest = target / "warm_start_program.py"
     if not warm_src.is_file():
         if require:
@@ -334,7 +335,8 @@ def main() -> int:
 
     rc = _copy_warmstart_program(
         setup_dir,
-        setup_subdir,
+        args.dataset,
+        args.metric,
         split,
         target,
         force=args.force,
