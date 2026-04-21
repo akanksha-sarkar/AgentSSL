@@ -9,7 +9,7 @@ import numpy as np
 # Replaced by setup/setup.py from setup/dataset.json (num_classes for this dataset)
 NUM_CLASSES = None
 
-exp_setting = "SL"
+exp_setting = "SSL"
 eval_setting = "noisy_val"
 # Before numpy/sklearn/torch: avoid OpenBLAS/MKL threading segfaults on some clusters.
 for _k, _v in (
@@ -38,7 +38,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from utils.dataset import ClassificationDataset
+from src.dataset import ClassificationDataset
 
 def load_program(program_path):
     spec = importlib.util.spec_from_file_location("program", program_path)

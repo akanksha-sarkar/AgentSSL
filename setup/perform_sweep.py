@@ -15,9 +15,7 @@ from pathlib import Path
 from torch.utils.data import Dataset
 from pycocotools.coco import COCO
 import torchvision.transforms.functional as TF
-from setup.binds.src.dataset import ClassificationDataset
-from setup.evaluate.unsupervised_metric.SSL.evaluate import _eval as unsup_eval
-
+from utils.dataset import ClassificationDataset
 
 def load_program(program_path):
     spec = importlib.util.spec_from_file_location("program", program_path)
@@ -162,13 +160,20 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, required=True, help="Dataset name")
-    parser.add_argument("--shot", type=str, required=True, help="Setting name")
+    parser.add_argument("--shot", type=int, required=True, help="Shot")
     parser.add_argument("--seed", type=int, required=True, help="Seed")
+    parser.add_argument("--eval_method", type=str, required=True, help="Evaluation method")
     args = parser.parse_args()
     dataset = args.dataset
     shot = args.shot
     seed = args.seed
-
+    eval_method = args.eval_method
+    if eval_method == "unsupervised_metric":
+        from utils.evaluate.unsupervised_metric.SSL.evaluate import _eval as unsup_eval   
+    elif eval_method == "noisy_val":
+        from utils.evaluate.noisy_val.SSL.evaluate import _eval as noisy_val_eval
+    else:
+        raise ValueError(f"Invalid evaluation method: {eval_method}")
     if dataset == "clevr_count":
         NUM_CLASSES = 8
     elif dataset == "dtd":
@@ -208,20 +213,31 @@ if __name__ == "__main__":
         for peft_config in HYPERPARAMETERS["peft_config"]:
             for train_epochs in HYPERPARAMETERS["train_epochs"]:
                 print("Running: ", net_name, peft_config, train_epochs)
-                agent = program.ClassificationAgent(net_builder_fn=get_net_builder, 
-                                                    get_peft_config_fn=get_peft_config, 
-                                                    num_classes=NUM_CLASSES, 
-                                                    net_name=net_name, 
-                                                    peft_config=peft_config, 
-                                                    train_epochs=train_epochs)
-                agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
-                val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.transform)
-                val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-                scores_to_use = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'bnm', 'snd']
+                if eval_method == "unsupervised_metric":
+                    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, 
+                                                        get_peft_config_fn=get_peft_config, 
+                                                        num_classes=NUM_CLASSES, 
+                                                        net_name=net_name, 
+                                                        peft_config=peft_config, 
+                                                        train_epochs=train_epochs)
+                    agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
+                    val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.transform)
+                    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+                    scores_to_use = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'bnm', 'snd']
 
-                eval_dict, _, _, _, _, _ = unsup_eval(agent, val_loader, sup_metric=True, scores=scores_to_use)
-                eval_dict = calculate_fitness(eval_dict, scores_to_use)
-
+                    eval_dict, _, _, _, _, _ = unsup_eval(agent, val_loader, sup_metric=True, scores=scores_to_use)
+                    eval_dict = calculate_fitness(eval_dict, scores_to_use)
+                else:
+                    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, 
+                                                        get_peft_config_fn=get_peft_config, 
+                                                        num_classes=NUM_CLASSES, 
+                                                        net_name=net_name, 
+                                                        peft_config=peft_config, 
+                                                        train_epochs=train_epochs)
+                    agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
+                    val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.transform)
+                    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+                    eval_dict = noisy_val_eval(agent, val_loader)
                 print(f"Result: Net name: {net_name}, Peft config: {peft_config}, Train epochs: {train_epochs}, Fitness: {eval_dict['fitness']}, Acc: {eval_dict['acc']}")
                 results.append({
                     "net_name": net_name,

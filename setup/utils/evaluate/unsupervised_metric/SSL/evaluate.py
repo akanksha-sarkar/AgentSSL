@@ -3,23 +3,9 @@ Evaluator for classification programs using a single-image predict interface.
 Metric: unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette)
 Setting: SSL
 """
-import sys
 import os
 
-# Replaced by setup/setup.py from setup/dataset.json (num_classes for this dataset)
 NUM_CLASSES = None
-
-# Before numpy/sklearn/torch: avoid OpenBLAS/MKL threading segfaults on some clusters.
-for _k, _v in (
-    ("OMP_NUM_THREADS", "1"),
-    ("MKL_NUM_THREADS", "1"),
-    ("OPENBLAS_NUM_THREADS", "1"),
-    ("NUMEXPR_NUM_THREADS", "1"),
-):
-    os.environ.setdefault(_k, _v)
-
-# Add the Apptainer bind mount path to Python's module search
-sys.path.insert(0, "/work")
 
 import faulthandler
 
@@ -63,38 +49,6 @@ def load_ground_truth(val_ann_file):
             gt[file_name] = category_id
 
     return gt
-
-
-def evaluate_agent(agent, val_img_dir, ground_truth):
-    correct = 0
-    total = 0
-
-    for file_name, true_cat in ground_truth.items():
-        img_path = os.path.join(val_img_dir, file_name)
-
-        if not os.path.isfile(img_path):
-            continue
-
-        image = Image.open(img_path).convert("RGB")
-        x = agent.transform(image).unsqueeze(0)
-        _, _, predictions = agent.predict(x)
-        pred = predictions[0]
-
-        if not isinstance(pred, dict):
-            continue
-        if "category_id" not in pred:
-            continue
-
-        total += 1
-        if pred["category_id"] == true_cat:
-            correct += 1
-
-    acc = correct / total if total > 0 else 0.0
-
-    return {
-        "top1_accuracy": acc,
-        "fitness": acc,
-    }
 
 def calculate_fitness(eval_dict, scores_to_use):
     """
