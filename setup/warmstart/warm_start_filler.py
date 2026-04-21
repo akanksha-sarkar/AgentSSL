@@ -23,6 +23,7 @@ def inject_template(
     train_epochs: int,
     num_classes: int,
     peft_config: dict,
+    fitness: float,
 ) -> str:
     # json.dumps works well here because:
     # - strings become valid Python string literals
@@ -33,6 +34,7 @@ def inject_template(
         "{TRAIN_EPOCHS_INPUT}": str(train_epochs),
         "{NUM_CLASSES_INPUT}": str(num_classes),
         "{PEFT_CONFIG_INPUT}": json.dumps(peft_config, indent=4),
+        "{FITNESS_INPUT}": str(fitness),
     }
 
     out = template_text
@@ -60,6 +62,7 @@ def build_program_from_best_result(
         train_epochs=best["train_epochs"],
         num_classes=num_classes,
         peft_config=best["peft_config"],
+        fitness=best["fitness"],
     )
 
     Path(output_py_path).write_text(rendered)

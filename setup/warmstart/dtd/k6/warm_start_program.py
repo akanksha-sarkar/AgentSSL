@@ -1,3 +1,4 @@
+# THIS PROGRAM GOT 0.702541256097428
 from __future__ import annotations
 import json
 import os

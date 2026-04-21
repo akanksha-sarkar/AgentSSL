@@ -1,3 +1,4 @@
+# THIS PROGRAM GOT A FITNESS SCORE OF {FITNESS_INPUT}
 from __future__ import annotations
 import json
 import os
