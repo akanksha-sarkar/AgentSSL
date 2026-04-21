@@ -150,12 +150,12 @@ def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_me
 
 
 HYPERPARAMETERS = {
-    "net_name": ["timm/vit_base_patch16_clip_224.openai", "timm/vit_base_patch14_reg4_dinov2.lvd142m"],
+    "net_name": ["timm/vit_base_patch14_reg4_dinov2.lvd142m"],
     "peft_config": [
         {"method_name": "lora_1", "lora_bottleneck": 4},
         {"method_name": "adaptformer", "ft_mlp_module": "adapter", "ft_mlp_mode": "parallel", "ft_mlp_ln": "before", "adapter_init": "lora_kaiming", "adapter_bottleneck": 4, "adapter_scaler": 0.1},
     ],
-    "train_epochs": [50, 100],
+    "train_epochs": [50,100],
 }
 if __name__ == "__main__":
     import argparse
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     shot = args.shot
     seed = args.seed
     eval_method = args.eval_method
-    if eval_method == "unsupervised_metric":
+    if eval_method == "unsupervised":
         from utils.evaluate.unsupervised_metric.SSL.evaluate import _eval as unsup_eval   
     elif eval_method == "noisy_val":
         from utils.evaluate.noisy_val.SSL.evaluate import run_noisy_val
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     data_dir = f"/share/j_sun/agentSSL/{dataset}/data"
     program_path = os.path.join("setup/warmstart/warm_start_program.py")
 
-    save_path = os.path.join("setup", "warmstart", dataset, eval_method, f"k{shot}", "results.json")
+    save_path = os.path.join("setup", "warmstart", dataset, eval_method, f"k{shot}", "results_dinov2.json")
     if os.path.exists(save_path):
         print(f"Results file already exists: {save_path}")
         exit()
@@ -215,7 +215,7 @@ if __name__ == "__main__":
         for peft_config in HYPERPARAMETERS["peft_config"]:
             for train_epochs in HYPERPARAMETERS["train_epochs"]:
                 print("Running: ", net_name, peft_config, train_epochs)
-                if eval_method == "unsupervised_metric":
+                if eval_method == "unsupervised":
                     agent = program.ClassificationAgent(net_builder_fn=get_net_builder, 
                                                         get_peft_config_fn=get_peft_config, 
                                                         num_classes=NUM_CLASSES, 

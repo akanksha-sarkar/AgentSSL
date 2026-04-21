@@ -248,7 +248,7 @@ def main() -> int:
     ap.add_argument("--seed", required=True, help="Seed: 0 or seed0")
     ap.add_argument(
         "--metric",
-        choices=["noisy_val", "unsupervised_metric"],
+        choices=["noisy_val", "unsupervised"],
         default=None,
         help="Which evaluate template under setup/evaluate/{metric}/",
     )
