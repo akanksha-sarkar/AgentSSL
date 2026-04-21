@@ -389,11 +389,13 @@ if __name__ == "__main__":
 
     root_dir = f"/home/eyl45/Sun/AgentSSL/{dataset}/aSSL_backbone/k{shot}/seed{seed}"
     data_dir = f"/share/j_sun/agentSSL/{dataset}/data"
-    program_path = os.path.join("setup/warm_start_program.py")
+    program_path = os.path.join("setup/warmstart/warm_start_program.py")
 
-    save_path = os.path.join(root_dir, "results.json")
+    save_path = os.path.join("setup", "warmstart", dataset, f"k{shot}", "results.json")
     if os.path.exists(save_path):
-        raise FileExistsError(f"Results file already exists: {save_path}")
+        print(f"Results file already exists: {save_path}")
+        exit()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     train_img_dir = os.path.join(data_dir, "images", "train")
     train_ann_file = os.path.join(root_dir, "annotations", "train", "train.json")
     unlabel_ann_file = os.path.join(root_dir, "annotations", "unlabelled", "unlabelled.json")
