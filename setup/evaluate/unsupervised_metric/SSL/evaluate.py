@@ -7,7 +7,7 @@ import sys
 import os
 
 # Replaced by setup/setup.py from setup/dataset.json (num_classes for this dataset)
-NUM_CLASSES = 47
+NUM_CLASSES = None
 
 # Before numpy/sklearn/torch: avoid OpenBLAS/MKL threading segfaults on some clusters.
 for _k, _v in (

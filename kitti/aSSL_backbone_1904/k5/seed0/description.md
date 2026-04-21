@@ -9,8 +9,7 @@ You have access to a very small training set, a validation set and a set of unla
 Your output will be evaluated using a standardized evaluation script which will return a set of unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set. 
 
 ### Dataset specification 
-A dataset of road-scene images with annotated 3D object positions relative to the camera. For the depth classification task, the distance to the nearest object is discretized into bins, turning continuous depth information into a small set of 4 classes. 
-Your training dataset contains 5 images per class for a total of just 20 images. Your unlabeled dataset has 6327 datapoints. 
+A dataset of road-scene images with annotated 3D object positions relative to the camera. For the depth classification task, the distance to the nearest object is discretized into bins, turning continuous depth information into a small set of 4 classes. Your training dataset contains 5 images per class for a total of just 20 images. Your unlabeled dataset has 6327 datapoints. 
 
 ### Model Interface
 

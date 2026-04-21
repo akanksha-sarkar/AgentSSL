@@ -9,8 +9,7 @@ You have access to a very small training set, a validation set and a set of unla
 Your output will be evaluated using a standardized evaluation script which will return a set of unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set. 
 
 ### Dataset specification 
-A large-scale scene recognition dataset containing images from hundreds of diverse environment categories, such as indoor spaces and outdoor landscapes. It emphasizes fine-grained distinctions between scenes (e.g., different types of rooms or natural settings) and contains total 397 classes.
-Your training dataset contains 3 images per class for a total of just 1191 images. Your unlabeled dataset has 18659 datapoints. 
+A large-scale scene recognition dataset containing images from hundreds of diverse environment categories, such as indoor spaces and outdoor landscapes. It emphasizes fine-grained distinctions between scenes (e.g., different types of rooms or natural settings) and contains total 397 classes. Your training dataset contains 3 images per class for a total of just 1191 images. Your unlabeled dataset has 18659 datapoints. 
  
 ### Model Interface
 

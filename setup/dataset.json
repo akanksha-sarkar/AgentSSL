@@ -1,0 +1,27 @@
+{
+    "dtd": {
+        "num_classes": 47,
+        "description_k3":"A texture recognition dataset consisting of real-world images annotated with human-interpretable texture attributes. It contains 47 categories (e.g., striped, dotted, fibrous, cracked). The images exhibit significant variation in scale, illumination, viewpoint, and background clutter. Your training dataset contains 3 images per class for a total of just 141 images. Your unlabeled dataset has 1739 datapoints. ", 
+        "description_k6":"A texture recognition dataset consisting of real-world images annotated with human-interpretable texture attributes. It contains 47 categories (e.g., striped, dotted, fibrous, cracked). The images exhibit significant variation in scale, illumination, viewpoint, and background clutter. Your training dataset contains 6 images per class for a total of just 282 images. Your unlabeled dataset has 1598 datapoints. "
+    },
+    "clevr_count": {
+        "num_classes": 3,
+        "description_k10":"A synthetic image dataset consisting of simple 3D scenes populated with geometric objects such as spheres, cubes, and cylinders. Each object varies along interpretable attributes including color, size, material, and spatial position. For the classification task, labels are derived from object counts in the scene. There are 8 total classes. Your training dataset contains 10 images per class for a total of just 80 images. Your unlabeled dataset has 48921 datapoints. ", 
+        "description_k20":"A synthetic image dataset consisting of simple 3D scenes populated with geometric objects such as spheres, cubes, and cylinders. Each object varies along interpretable attributes including color, size, material, and spatial position. For the classification task, labels are derived from object counts in the scene. There are 8 total classes. Your training dataset contains 20 images per class for a total of just 160 images. Your unlabeled dataset has 48841 datapoints. "
+    }, 
+    "kitti": {
+        "num_classes": 4,
+        "description_k5":"A dataset of road-scene images with annotated 3D object positions relative to the camera. For the depth classification task, the distance to the nearest object is discretized into bins, turning continuous depth information into a small set of 4 classes. Your training dataset contains 5 images per class for a total of just 20 images. Your unlabeled dataset has 6327 datapoints.",
+        "description_k10":"A dataset of road-scene images with annotated 3D object positions relative to the camera. For the depth classification task, the distance to the nearest object is discretized into bins, turning continuous depth information into a small set of 4 classes. Your training dataset contains 10 images per class for a total of just 40 images. Your unlabeled dataset has 6307 datapoints. "
+    }, 
+    "sun397":{
+        "num_classes": 397,
+        "description_k3":"A large-scale scene recognition dataset containing images from hundreds of diverse environment categories, such as indoor spaces and outdoor landscapes. It emphasizes fine-grained distinctions between scenes (e.g., different types of rooms or natural settings) and contains total 397 classes. Your training dataset contains 3 images per class for a total of just 1191 images. Your unlabeled dataset has 18659 datapoints. ",
+        "description_k6":"A large-scale scene recognition dataset containing images from hundreds of diverse environment categories, such as indoor spaces and outdoor landscapes. It emphasizes fine-grained distinctions between scenes (e.g., different types of rooms or natural settings) and contains total 397 classes. Your training dataset contains 6 images per class for a total of just 2382 images. Your unlabeled dataset has 17468 datapoints. "
+    },
+    "resisc45": {
+        "num_classes": 45,
+        "description_k1":"None",
+        "description_k2":"None"
+    }
+}

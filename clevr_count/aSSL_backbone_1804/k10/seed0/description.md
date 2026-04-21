@@ -9,8 +9,7 @@ You have access to a very small training set, a validation set and a set of unla
 Your output will be evaluated using a standardized evaluation script which will return a set of unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set. 
 
 ### Dataset specification 
-A synthetic image dataset consisting of simple 3D scenes populated with geometric objects such as spheres, cubes, and cylinders. Each object varies along interpretable attributes including color, size, material, and spatial position. For the classification task, labels are derived from object counts in the scene. There are 8 total classes. 
-Your training dataset contains 10 images per class for a total of just 80 images. Your unlabeled dataset has 48921 datapoints. 
+A synthetic image dataset consisting of simple 3D scenes populated with geometric objects such as spheres, cubes, and cylinders. Each object varies along interpretable attributes including color, size, material, and spatial position. For the classification task, labels are derived from object counts in the scene. There are 8 total classes. Your training dataset contains 10 images per class for a total of just 80 images. Your unlabeled dataset has 48921 datapoints. 
 
 ### Model Interface
 
