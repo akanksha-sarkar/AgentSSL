@@ -19,8 +19,8 @@ Example:
 Creates:
   .../seed0/annotations/   (copy)
   .../seed0/evaluate.py   (from setup/evaluate/{metric}/{learning}/evaluate.py, NUM_CLASSES set)
-  .../seed0/program2.py, nets/, src/, ...  (contents of setup/binds, flat into seed dir)
   .../seed0/description.md (from setup/description.md + objective from setting.json + dataset blurb from dataset.json for this split)
+  .../seed0/warm_start_program.py (if setup/warmstart/{setup_subdir}/{split}/warm_start_program.py exists)
 """
 from __future__ import annotations
 
@@ -80,6 +80,49 @@ def _annotations_source(
     setup_dir: Path, setup_subdir: str, split: str, seed_dir: str
 ) -> Path:
     return setup_dir / "datasets" / setup_subdir / split / seed_dir / "annotations"
+
+
+def _warmstart_program_source(
+    setup_dir: Path, setup_subdir: str, split: str
+) -> Path:
+    return setup_dir / "warmstart" / setup_subdir / split / "warm_start_program.py"
+
+
+def _copy_warmstart_program(
+    setup_dir: Path,
+    setup_subdir: str,
+    split: str,
+    target: Path,
+    *,
+    force: bool,
+    require: bool,
+    skip: bool,
+) -> int:
+    """
+    Copy setup/warmstart/{setup_subdir}/{split}/warm_start_program.py -> target/warm_start_program.py.
+    Returns 0 on success or skip, 1 on error.
+    """
+    if skip:
+        return 0
+    warm_src = _warmstart_program_source(setup_dir, setup_subdir, split)
+    dest = target / "warm_start_program.py"
+    if not warm_src.is_file():
+        if require:
+            print(
+                f"ERROR: --require-warmstart but file missing: {warm_src}",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"warmstart: skipped (not found: {warm_src})")
+        return 0
+    if dest.exists() or dest.is_symlink():
+        if not force:
+            print(f"ERROR: {dest} exists; use --force to replace", file=sys.stderr)
+            return 1
+        _remove_path(dest)
+    shutil.copy2(warm_src, dest)
+    print(f"warm_start_program.py: copied {warm_src} -> {dest}")
+    return 0
 
 
 def _remove_path(p: Path) -> None:
@@ -241,9 +284,19 @@ def main() -> int:
         help="With --metric/--learning: do not write description.md from template + JSON",
     )
     ap.add_argument(
+        "--no-warmstart",
+        action="store_true",
+        help="Do not copy warm_start_program.py from setup/warmstart/{setup_subdir}/{split}/",
+    )
+    ap.add_argument(
+        "--require-warmstart",
+        action="store_true",
+        help="Fail if setup/warmstart/{setup_subdir}/{split}/warm_start_program.py is missing",
+    )
+    ap.add_argument(
         "--force",
         action="store_true",
-        help="Replace existing annotations / evaluate.py / files merged from binds if present",
+        help="Replace existing annotations / evaluate.py / binds files / warm_start_program.py if present",
     )
     args = ap.parse_args()
 
@@ -278,6 +331,18 @@ def main() -> int:
     target = root / args.dataset / args.setting / split / seed_dir
     target.mkdir(parents=True, exist_ok=True)
     print(f"Created: {target}")
+
+    rc = _copy_warmstart_program(
+        setup_dir,
+        setup_subdir,
+        split,
+        target,
+        force=args.force,
+        require=args.require_warmstart,
+        skip=args.no_warmstart,
+    )
+    if rc != 0:
+        return rc
 
     if args.metric is not None and args.learning is not None:
         if not dataset_json.is_file():
