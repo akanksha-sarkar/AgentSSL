@@ -148,8 +148,10 @@ def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_me
     
     # Lazy import: pulls sklearn + pytorch_adapt validators (heavy; can segfault if threaded BLAS misconfigured).
     from metrics.metrics import unsupervised_scores
-
-    eval_dict = unsupervised_scores(y_feats, y_logits, y_probs, scores)
+    if len(scores) > 0:
+        eval_dict = unsupervised_scores(y_feats, y_logits, y_probs, scores)
+    else:
+        eval_dict = {}
     if sup_metric:
         eval_dict["acc"] = acc
     return eval_dict, y_feats, y_logits, y_pred, y_probs, y_labels

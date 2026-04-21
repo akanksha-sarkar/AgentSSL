@@ -36,7 +36,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from utils.dataset import ClassificationDataset
+from src.dataset import ClassificationDataset
 
 def load_program(program_path):
     spec = importlib.util.spec_from_file_location("program", program_path)

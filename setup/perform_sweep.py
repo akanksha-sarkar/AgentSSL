@@ -16,6 +16,7 @@ from torch.utils.data import Dataset
 from pycocotools.coco import COCO
 import torchvision.transforms.functional as TF
 from utils.dataset import ClassificationDataset
+import numpy as np
 
 def load_program(program_path):
     spec = importlib.util.spec_from_file_location("program", program_path)
@@ -171,7 +172,8 @@ if __name__ == "__main__":
     if eval_method == "unsupervised_metric":
         from utils.evaluate.unsupervised_metric.SSL.evaluate import _eval as unsup_eval   
     elif eval_method == "noisy_val":
-        from utils.evaluate.noisy_val.SSL.evaluate import _eval as noisy_val_eval
+        from utils.evaluate.noisy_val.SSL.evaluate import run_noisy_val
+        from utils.evaluate.unsupervised_metric.SSL.evaluate import _eval as eval_fn
     else:
         raise ValueError(f"Invalid evaluation method: {eval_method}")
     if dataset == "clevr_count":
@@ -189,11 +191,11 @@ if __name__ == "__main__":
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
 
-    root_dir = f"/home/eyl45/Sun/AgentSSL/{dataset}/aSSL_backbone/k{shot}/seed{seed}"
+    root_dir = f"/home/eyl45/Sun/AgentSSL/{dataset}/aSSL_backbone_{eval_method}/k{shot}/seed{seed}"
     data_dir = f"/share/j_sun/agentSSL/{dataset}/data"
     program_path = os.path.join("setup/warmstart/warm_start_program.py")
 
-    save_path = os.path.join("setup", "warmstart", dataset, f"k{shot}", "results.json")
+    save_path = os.path.join("setup", "warmstart", dataset, eval_method, f"k{shot}", "results.json")
     if os.path.exists(save_path):
         print(f"Results file already exists: {save_path}")
         exit()
@@ -227,7 +229,27 @@ if __name__ == "__main__":
 
                     eval_dict, _, _, _, _, _ = unsup_eval(agent, val_loader, sup_metric=True, scores=scores_to_use)
                     eval_dict = calculate_fitness(eval_dict, scores_to_use)
-                else:
+                elif eval_method == "noisy_val":
+                    acc_lst = []
+                    for n in range(4):
+                        train_ann_file_partial = os.path.join(root_dir, "annotations", "val", f"seed{n}", "annotations",  "train", "train.json")
+                        val_ann_file_partial = os.path.join(root_dir, "annotations", "val", f"seed{n}", "annotations", "noisy_val", "noisy_val.json")
+                        agent = program.ClassificationAgent(net_builder_fn=get_net_builder, 
+                                                            get_peft_config_fn=get_peft_config, 
+                                                            num_classes=NUM_CLASSES, 
+                                                            net_name=net_name, 
+                                                            peft_config=peft_config, 
+                                                            train_epochs=train_epochs)
+                        agent.fit(train_img_dir, train_ann_file_partial, unlabel_ann_file)
+                        val_dataset = ClassificationDataset(val_img_dir, val_ann_file_partial, transform=agent.transform)
+                        val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+                        acc = run_noisy_val(agent, val_img_dir, val_ann_file_partial)
+                        print(f"Noisy val accuracy: {acc}")
+                        acc_lst.append(acc)
+                    eval_dict = {"fitness": np.mean(acc_lst)}
+                    print(f"Noisy val accuracy: {eval_dict['fitness']}")
+                    
+                    # Compute full val set accuracy
                     agent = program.ClassificationAgent(net_builder_fn=get_net_builder, 
                                                         get_peft_config_fn=get_peft_config, 
                                                         num_classes=NUM_CLASSES, 
@@ -237,7 +259,9 @@ if __name__ == "__main__":
                     agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
                     val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.transform)
                     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-                    eval_dict = noisy_val_eval(agent, val_loader)
+                    acc_dict, _, _, _, _, _ = eval_fn(agent, val_loader, sup_metric=True, scores=[])
+                    eval_dict["acc"] = acc_dict["acc"]
+                    print(f"Full val set accuracy: {eval_dict['acc']}")
                 print(f"Result: Net name: {net_name}, Peft config: {peft_config}, Train epochs: {train_epochs}, Fitness: {eval_dict['fitness']}, Acc: {eval_dict['acc']}")
                 results.append({
                     "net_name": net_name,
