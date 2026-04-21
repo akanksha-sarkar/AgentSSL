@@ -1,0 +1,480 @@
+{
+  "images": [
+    {
+      "id": 3235,
+      "file_name": "003235.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 3710,
+      "file_name": "003710.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 6581,
+      "file_name": "006581.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 7045,
+      "file_name": "007045.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 7672,
+      "file_name": "007672.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 9207,
+      "file_name": "009207.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 9716,
+      "file_name": "009716.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 10857,
+      "file_name": "010857.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 11586,
+      "file_name": "011586.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 14173,
+      "file_name": "014173.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 17554,
+      "file_name": "017554.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 20153,
+      "file_name": "020153.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 25540,
+      "file_name": "025540.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 25838,
+      "file_name": "025838.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 26544,
+      "file_name": "026544.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 30796,
+      "file_name": "030796.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 31386,
+      "file_name": "031386.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 32120,
+      "file_name": "032120.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 37439,
+      "file_name": "037439.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 38198,
+      "file_name": "038198.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 41766,
+      "file_name": "041766.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 41984,
+      "file_name": "041984.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 42105,
+      "file_name": "042105.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 49018,
+      "file_name": "049018.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 49305,
+      "file_name": "049305.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 50741,
+      "file_name": "050741.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 51490,
+      "file_name": "051490.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 53922,
+      "file_name": "053922.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 55587,
+      "file_name": "055587.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 55771,
+      "file_name": "055771.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 56026,
+      "file_name": "056026.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 57724,
+      "file_name": "057724.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 59618,
+      "file_name": "059618.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 62041,
+      "file_name": "062041.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 63044,
+      "file_name": "063044.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 64721,
+      "file_name": "064721.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 65397,
+      "file_name": "065397.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 66654,
+      "file_name": "066654.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 66820,
+      "file_name": "066820.png",
+      "width": 480,
+      "height": 320
+    },
+    {
+      "id": 68995,
+      "file_name": "068995.png",
+      "width": 480,
+      "height": 320
+    }
+  ],
+  "annotations": [
+    {
+      "id": 3235,
+      "image_id": 3235,
+      "category_id": 5
+    },
+    {
+      "id": 3710,
+      "image_id": 3710,
+      "category_id": 6
+    },
+    {
+      "id": 6581,
+      "image_id": 6581,
+      "category_id": 6
+    },
+    {
+      "id": 7045,
+      "image_id": 7045,
+      "category_id": 2
+    },
+    {
+      "id": 7672,
+      "image_id": 7672,
+      "category_id": 6
+    },
+    {
+      "id": 9207,
+      "image_id": 9207,
+      "category_id": 8
+    },
+    {
+      "id": 9716,
+      "image_id": 9716,
+      "category_id": 2
+    },
+    {
+      "id": 10857,
+      "image_id": 10857,
+      "category_id": 8
+    },
+    {
+      "id": 11586,
+      "image_id": 11586,
+      "category_id": 4
+    },
+    {
+      "id": 14173,
+      "image_id": 14173,
+      "category_id": 6
+    },
+    {
+      "id": 17554,
+      "image_id": 17554,
+      "category_id": 5
+    },
+    {
+      "id": 20153,
+      "image_id": 20153,
+      "category_id": 1
+    },
+    {
+      "id": 25540,
+      "image_id": 25540,
+      "category_id": 6
+    },
+    {
+      "id": 25838,
+      "image_id": 25838,
+      "category_id": 1
+    },
+    {
+      "id": 26544,
+      "image_id": 26544,
+      "category_id": 5
+    },
+    {
+      "id": 30796,
+      "image_id": 30796,
+      "category_id": 8
+    },
+    {
+      "id": 31386,
+      "image_id": 31386,
+      "category_id": 3
+    },
+    {
+      "id": 32120,
+      "image_id": 32120,
+      "category_id": 3
+    },
+    {
+      "id": 37439,
+      "image_id": 37439,
+      "category_id": 1
+    },
+    {
+      "id": 38198,
+      "image_id": 38198,
+      "category_id": 3
+    },
+    {
+      "id": 41766,
+      "image_id": 41766,
+      "category_id": 4
+    },
+    {
+      "id": 41984,
+      "image_id": 41984,
+      "category_id": 5
+    },
+    {
+      "id": 42105,
+      "image_id": 42105,
+      "category_id": 7
+    },
+    {
+      "id": 49018,
+      "image_id": 49018,
+      "category_id": 8
+    },
+    {
+      "id": 49305,
+      "image_id": 49305,
+      "category_id": 1
+    },
+    {
+      "id": 50741,
+      "image_id": 50741,
+      "category_id": 4
+    },
+    {
+      "id": 51490,
+      "image_id": 51490,
+      "category_id": 4
+    },
+    {
+      "id": 53922,
+      "image_id": 53922,
+      "category_id": 1
+    },
+    {
+      "id": 55587,
+      "image_id": 55587,
+      "category_id": 7
+    },
+    {
+      "id": 55771,
+      "image_id": 55771,
+      "category_id": 7
+    },
+    {
+      "id": 56026,
+      "image_id": 56026,
+      "category_id": 5
+    },
+    {
+      "id": 57724,
+      "image_id": 57724,
+      "category_id": 2
+    },
+    {
+      "id": 59618,
+      "image_id": 59618,
+      "category_id": 7
+    },
+    {
+      "id": 62041,
+      "image_id": 62041,
+      "category_id": 7
+    },
+    {
+      "id": 63044,
+      "image_id": 63044,
+      "category_id": 3
+    },
+    {
+      "id": 64721,
+      "image_id": 64721,
+      "category_id": 8
+    },
+    {
+      "id": 65397,
+      "image_id": 65397,
+      "category_id": 4
+    },
+    {
+      "id": 66654,
+      "image_id": 66654,
+      "category_id": 2
+    },
+    {
+      "id": 66820,
+      "image_id": 66820,
+      "category_id": 3
+    },
+    {
+      "id": 68995,
+      "image_id": 68995,
+      "category_id": 2
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "0"
+    },
+    {
+      "id": 2,
+      "name": "1"
+    },
+    {
+      "id": 3,
+      "name": "2"
+    },
+    {
+      "id": 4,
+      "name": "3"
+    },
+    {
+      "id": 5,
+      "name": "4"
+    },
+    {
+      "id": 6,
+      "name": "5"
+    },
+    {
+      "id": 7,
+      "name": "6"
+    },
+    {
+      "id": 8,
+      "name": "7"
+    }
+  ]
+}
