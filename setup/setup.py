@@ -455,5 +455,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-# python setup/setup.py --dataset dtd --setting aSSL_backbone --split k3 --seed 0 --metric unsupervised_metric --learning SSL
