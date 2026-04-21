@@ -9,7 +9,7 @@
 #SBATCH -n 8
 #SBATCH --mem=64G
 #SBATCH -t 12:00:00
-#SBATCH --partition=gpu
+#SBATCH --partition=jjs533,gpu
 #SBATCH --constraint=gpu-high
 #SBATCH --exclude=bhattacharjee-compute-02,snavely-compute-09,genai-large-01,lil-compute-05,unicorn-compute-01,lancer-compute-01,abdelfattah-compute-02,portal-compute-02,ma-compute-02,kuleshov-compute-02,unicorn-compute-04
 #SBATCH --gres=gpu:1
