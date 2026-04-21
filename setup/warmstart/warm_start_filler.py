@@ -34,7 +34,7 @@ def inject_template(
         "{TRAIN_EPOCHS_INPUT}": str(train_epochs),
         "{NUM_CLASSES_INPUT}": str(num_classes),
         "{PEFT_CONFIG_INPUT}": json.dumps(peft_config, indent=4),
-        "{FITNESS_INPUT}": str(fitness),
+        "{FITNESS_INPUT}": str(round(fitness, 4)),
     }
 
     out = template_text
@@ -62,7 +62,7 @@ def build_program_from_best_result(
         train_epochs=best["train_epochs"],
         num_classes=num_classes,
         peft_config=best["peft_config"],
-        fitness=best["fitness"],
+        fitness=round(best["fitness"], 4),
     )
 
     Path(output_py_path).write_text(rendered)

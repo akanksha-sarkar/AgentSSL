@@ -1,4 +1,4 @@
-# THIS PROGRAM GOT 0.6800842039933905
+# THIS PROGRAM GOT A FITNESS SCORE OF 0.6801
 from __future__ import annotations
 import json
 import os
