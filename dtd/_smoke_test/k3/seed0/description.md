@@ -2,15 +2,13 @@
 
 ## Objective
 
-You are an AI agent tasked with implementing a **classification program** for an image dataset. Your goal is to train (or otherwise derive) a classifier using the provided training dataset and produce **predicted labels for every image in the validation dataset**. 
+You are an AI agent tasked with implementing a **classification program** for an image dataset. Your goal is to train (or otherwise derive) a classifier using the provided training dataset and produce **predicted labels for every image in the validation dataset**.
 
-You have access to a very small training set, a validation set and a set of unlabelled datapoints. 
+You have access to a very small training set, a validation set and a set of unlabelled datapoints. Your output will be evaluated using a standardized evaluation script which will return a set of unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set.
 
-Your output will be evaluated using a standardized evaluation script which will return a set of unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set. 
+### Dataset specification
 
-### Dataset specification 
-A texture recognition dataset consisting of real-world images annotated with human-interpretable texture attributes. It contains 47 categories (e.g., striped, dotted, fibrous, cracked), with 120 images per category, totaling 5,640 images. The images exhibit significant variation in scale, illumination, viewpoint, and background clutter.
-Your training dataset contains 3 images per class for a total of just 141 images. Your unlabeled dataset has 1598 datapoints. 
+A texture recognition dataset consisting of real-world images annotated with human-interpretable texture attributes. It contains 47 categories (e.g., striped, dotted, fibrous, cracked). The images exhibit significant variation in scale, illumination, viewpoint, and background clutter. Your training dataset contains 3 images per class for a total of just 141 images. Your unlabeled dataset has 1739 datapoints.
 
 ### Model Interface
 
