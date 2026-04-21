@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#SBATCH --requeue
+#SBATCH -o logs/%x_%j.out
+#SBATCH -e logs/%x_%j.err
+#SBATCH --mail-type=END,FAIL,REQUEUE
+#SBATCH --mail-user=eyl45@cornell.edu
+#SBATCH -N 1
+#SBATCH -n 8
+#SBATCH --mem=64G
+#SBATCH -t 12:00:00
+#SBATCH --partition=gpu
+#SBATCH --constraint=gpu-high
+#SBATCH --exclude=bhattacharjee-compute-02,snavely-compute-09,genai-large-01,lil-compute-05,unicorn-compute-01,lancer-compute-01,abdelfattah-compute-02,portal-compute-02,ma-compute-02,kuleshov-compute-02,unicorn-compute-04
+#SBATCH --gres=gpu:1
+
+set -e
+
+DATASET=$1
+SHOT=$2
+SEED=$3
+EVAL_METHOD=$4
+
+eval "$(conda shell.bash hook)"
+conda activate aira-dojo
+
+echo "=== Job Info ==="
+echo "Job ID: $SLURM_JOB_ID"
+echo "Job Name: $SLURM_JOB_NAME"
+echo "Node: $(hostname)"
+echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null || echo 'N/A')"
+echo "Date: $(date)"
+echo "================"
+
+cd /home/eyl45/Sun/AgentSSL
+
+echo "=== Running: $DATASET $SHOT $SEED $EVAL_METHOD ==="
+python setup/perform_sweep.py --dataset $DATASET --shot $SHOT --seed $SEED --eval_method $EVAL_METHOD

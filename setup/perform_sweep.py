@@ -195,7 +195,7 @@ if __name__ == "__main__":
     data_dir = f"/share/j_sun/agentSSL/{dataset}/data"
     program_path = os.path.join("setup/warmstart/warm_start_program.py")
 
-    save_path = os.path.join("setup", "warmstart", dataset, eval_method, f"k{shot}", "results_dinov2.json")
+    save_path = os.path.join("setup", "warmstart", dataset, eval_method, f"k{shot}", "results.json")
     if os.path.exists(save_path):
         print(f"Results file already exists: {save_path}")
         exit()
