@@ -1,27 +1,9 @@
-"""
-Evaluator for classification programs using a single-image predict interface.
-"""
 import sys
 import os
-
-# Before numpy/sklearn/torch: avoid OpenBLAS/MKL threading segfaults on some clusters.
-for _k, _v in (
-    ("OMP_NUM_THREADS", "1"),
-    ("MKL_NUM_THREADS", "1"),
-    ("OPENBLAS_NUM_THREADS", "1"),
-    ("NUMEXPR_NUM_THREADS", "1"),
-):
-    os.environ.setdefault(_k, _v)
-
-# Add the Apptainer bind mount path to Python's module search
-sys.path.insert(0, "/work")
 
 import faulthandler
 
 faulthandler.enable()
-
-print("✅ Added /work to sys.path")
-print("Working dir:", os.getcwd())
 
 import json
 import importlib.util
@@ -38,7 +20,6 @@ def load_program(program_path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
-
 
 def load_ground_truth(val_ann_file):
     with open(val_ann_file, "r") as f:
@@ -58,38 +39,6 @@ def load_ground_truth(val_ann_file):
             gt[file_name] = category_id
 
     return gt
-
-
-def evaluate_agent(agent, val_img_dir, ground_truth):
-    correct = 0
-    total = 0
-
-    for file_name, true_cat in ground_truth.items():
-        img_path = os.path.join(val_img_dir, file_name)
-
-        if not os.path.isfile(img_path):
-            continue
-
-        image = Image.open(img_path).convert("RGB")
-        x = agent.transform(image).unsqueeze(0)
-        _, _, predictions = agent.predict(x)
-        pred = predictions[0]
-
-        if not isinstance(pred, dict):
-            continue
-        if "category_id" not in pred:
-            continue
-
-        total += 1
-        if pred["category_id"] == true_cat:
-            correct += 1
-
-    acc = correct / total if total > 0 else 0.0
-
-    return {
-        "top1_accuracy": acc,
-        "fitness": acc,
-    }
 
 def calculate_fitness(eval_dict, scores_to_use):
     """
@@ -196,14 +145,26 @@ def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_me
         eval_dict["acc"] = acc
     return eval_dict, y_feats, y_logits, y_pred, y_probs, y_labels
 
+
+HYPERPARAMETERS = {
+    "net_name": ["timm/vit_base_patch16_clip_224.openai", "timm/vit_base_patch14_reg4_dinov2.lvd142m"],
+    "peft_config": [
+        {"method_name": "lora_1", "lora_bottleneck": 4},
+        {"method_name": "adaptformer", "ft_mlp_module": "adapter", "ft_mlp_mode": "parallel", "ft_mlp_ln": "before", "adapter_init": "lora_kaiming", "adapter_bottleneck": 4, "adapter_scaler": 0.1},
+    ],
+    "train_epochs": [50, 100],
+}
+NUM_CLASSES = 47
 if __name__ == "__main__":
 
-    # root_dir = os.environ.get("ROOT_DIR", "/work")
-    # program_path = os.environ.get("PROGRAM_PATH", os.path.join(root_dir, "program.py"))
-    # data_dir = os.environ.get("DATA_DIR", os.path.join("/data"))
+    root_dir = os.environ.get("ROOT_DIR", "/work")
+    program_path = os.environ.get("PROGRAM_PATH", os.path.join(root_dir, "program.py"))
+    data_dir = os.environ.get("DATA_DIR", os.path.join("/data"))
+
     root_dir = "/home/eyl45/Sun/AgentSSL/dtd/aSSL_backbone_1804/k3/seed0"
-    program_path = "/home/eyl45/Sun/AgentSSL/dtd/aSSL_backbone_1804/k3/seed0/program2.py"
     data_dir = "/share/j_sun/agentSSL/dtd/data"
+    program_path = os.path.join(root_dir, "warm_start_program.py")
+
     train_img_dir = os.path.join(data_dir, "images", "train")
     train_ann_file = os.path.join(root_dir, "annotations", "train", "train.json")
     unlabel_ann_file = os.path.join(root_dir, "annotations", "unlabelled", "unlabelled.json")
@@ -211,27 +172,36 @@ if __name__ == "__main__":
     val_ann_file = os.path.join(data_dir, "annotations", "val", "val.json")
 
     program = load_program(program_path)
+    results = []
+    # Perform sweep
     from nets.net_builder import get_net_builder
     from nets.peft import get_peft_config
-    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config, num_classes=47)
+    for net_name in HYPERPARAMETERS["net_name"]:
+        for peft_config in HYPERPARAMETERS["peft_config"]:
+            for train_epochs in HYPERPARAMETERS["train_epochs"]:
+                print("Running: ", net_name, peft_config, train_epochs)
+                agent = program.ClassificationAgent(net_builder_fn=get_net_builder, 
+                                                    get_peft_config_fn=get_peft_config, 
+                                                    num_classes=NUM_CLASSES, 
+                                                    net_name=net_name, 
+                                                    peft_config=peft_config, 
+                                                    train_epochs=train_epochs)
+                agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
+                val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.transform)
+                val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+                scores_to_use = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'bnm', 'snd']
 
-    agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
+                eval_dict, _, _, _, _, _ = _eval(agent, val_loader, sup_metric=True, scores=scores_to_use)
+                eval_dict = calculate_fitness(eval_dict, scores_to_use)
 
-    val_dataset = ClassificationDataset(val_img_dir, val_ann_file, transform=agent.transform)
-    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-
-    #possible_scores = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']
-    #scores_to_use = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']
-
-    # possible_scores = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'bnm', 'snd']
-    scores_to_use = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'bnm', 'snd']
-
-    # scores_to_use = []
-    sup_metric = True
-    eval_dict, _, _, _, _, _ = _eval(agent, val_loader, sup_metric=sup_metric, scores=scores_to_use)
-    eval_dict = calculate_fitness(eval_dict, scores_to_use)
-    #ground_truth = load_ground_truth(val_ann_file)
-    #eval_dict2 = evaluate_agent(agent, val_img_dir, ground_truth)
-
-    print("METRICS:", eval_dict)
-    #print("METRICS2:", eval_dict2)
+                print(f"Result: Net name: {net_name}, Peft config: {peft_config}, Train epochs: {train_epochs}, Fitness: {eval_dict['fitness']}, Acc: {eval_dict['acc']}")
+                results.append({
+                    "net_name": net_name,
+                    "peft_config": peft_config,
+                    "train_epochs": train_epochs,
+                    "fitness": eval_dict['fitness'],
+                    "acc": eval_dict['acc']
+                })
+    # Save results to json
+    with open(os.path.join(root_dir, "results.json"), "w") as f:
+        json.dump(results, f)

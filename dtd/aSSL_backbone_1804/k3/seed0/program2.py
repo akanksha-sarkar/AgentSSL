@@ -1,41 +1,43 @@
-"""
-Minimal SSL entrypoint for evaluate.py using the same TimmViT + LoRA stack as test.py.
-
-evaluate.py expects: SSL_Algorithm(...), .fit(img_dir, train_ann, unlabel_ann),
-.transform (PIL -> tensor), .device, .predict(batch_tensor) -> logits, feat, predictions
-where each prediction dict has key "category_id" matching COCO annotation ids.
-"""
 from __future__ import annotations
 
+import copy
 import json
+import math
 import os
+from collections import deque
 
 from PIL import Image
+
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as T
 
-from nets.net_builder import get_net_builder
-from nets.peft import get_peft_config
+
+IMAGENET_MEAN = [0.485, 0.456, 0.406]
+IMAGENET_STD = [0.229, 0.224, 0.225]
 
 
-def _coco_label_mapping(train_ann_file: str):
-    with open(train_ann_file, "r") as f:
-        coco = json.load(f)
-    cat_ids = sorted(c["id"] for c in coco["categories"])
+def _read_json(path: str):
+    with open(path, "r") as f:
+        return json.load(f)
+
+
+def _build_label_mappings(train_ann_file: str):
+    coco = _read_json(train_ann_file)
+    cat_ids = sorted([c["id"] for c in coco["categories"]])
     cat_id_to_idx = {cid: i for i, cid in enumerate(cat_ids)}
     idx_to_cat_id = {i: cid for cid, i in cat_id_to_idx.items()}
     return cat_id_to_idx, idx_to_cat_id, len(cat_ids)
 
 
-def _labeled_samples(img_dir: str, train_ann_file: str, cat_id_to_idx: dict):
-    with open(train_ann_file, "r") as f:
-        coco = json.load(f)
+def _load_labeled_samples(img_dir: str, train_ann_file: str, cat_id_to_idx: dict):
+    coco = _read_json(train_ann_file)
     id_to_name = {img["id"]: img["file_name"] for img in coco["images"]}
     samples = []
     for ann in coco["annotations"]:
-        fn = id_to_name.get(ann["image_id"])
+        fn = id_to_name.get(ann["image_id"], None)
         if fn is None:
             continue
         path = os.path.join(img_dir, fn)
@@ -45,6 +47,17 @@ def _labeled_samples(img_dir: str, train_ann_file: str, cat_id_to_idx: dict):
         if cid not in cat_id_to_idx:
             continue
         samples.append((path, cat_id_to_idx[cid]))
+    return samples
+
+
+def _load_unlabeled_samples(img_dir: str, unlabel_ann_file: str):
+    coco = _read_json(unlabel_ann_file)
+    samples = []
+    for img in coco["images"]:
+        fn = img["file_name"]
+        path = os.path.join(img_dir, fn)
+        if os.path.isfile(path):
+            samples.append(path)
     return samples
 
 
@@ -59,117 +72,314 @@ class _LabeledDataset(Dataset):
     def __getitem__(self, idx):
         path, y = self.samples[idx]
         img = Image.open(path).convert("RGB")
-        return self.transform(img), y
+        x = self.transform(img)
+        return x, y
+
+
+class _UnlabeledPairDataset(Dataset):
+    def __init__(self, samples, weak_transform, strong_transform):
+        self.samples = samples
+        self.weak_transform = weak_transform
+        self.strong_transform = strong_transform
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        path = self.samples[idx]
+        img = Image.open(path).convert("RGB")
+        xw = self.weak_transform(img)
+        xs = self.strong_transform(img)
+        return xw, xs
+
+
+class _SoftTargetCrossEntropy(nn.Module):
+    def forward(self, logits, target_probs):
+        logp = F.log_softmax(logits, dim=-1)
+        return -(target_probs * logp).sum(dim=-1).mean()
 
 
 class ClassificationAgent:
-    """Same backbone path as test.py (timm ViT-B/16 CLIP OpenAI + LoRA via net_builder)."""
-
-    NET_NAME = "timm/vit_base_patch16_clip_224.openai"
-
-    def __init__(self, net_builder_fn, get_peft_config_fn, num_classes=47, train_epochs: int = 50, batch_size: int = 32, lr: float = 3e-4):
-        # Injected timm backbone from evaluate.py is unused; weights come from seed0/pretrain_weight.
+    def __init__(self, net_builder_fn, get_peft_config_fn, num_classes):
         self.net_builder_fn = net_builder_fn
         self.get_peft_config_fn = get_peft_config_fn
-        self.train_epochs = 50
-        self.batch_size = batch_size
-        self.lr = lr
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = None
-        self.transform = None
-        self.idx_to_cat_id = None
         self.num_classes = num_classes
-        self.peft_config = self.get_peft_config_fn(
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        self.idx_to_cat_id = {i: i for i in range(num_classes)}
+        self.transform = self._build_eval_transform()
+
+        net_name = "timm/vit_base_patch14_reg4_dinov2.lvd142m"
+        peft_config = self.get_peft_config_fn(
             {
                 "method_name": "adaptformer",
-                "adapter_bottleneck": 4,
-                "adapter_init": "lora_kaiming",
-                "adapter_scaler": 0.1,
                 "ft_mlp_module": "adapter",
                 "ft_mlp_mode": "parallel",
                 "ft_mlp_ln": "before",
+                "adapter_init": "lora_kaiming",
+                "adapter_bottleneck": 16,
+                "adapter_scaler": 0.1,
                 "freeze_backbone": False,
             }
         )
-        self.vit_config = {"drop_path_rate": 0}
-        self.net_builder = self.net_builder_fn(self.NET_NAME, self.peft_config, self.vit_config)
-        self.model = self.net_builder(
-            num_classes=self.num_classes,
+        vit_config = {"drop_path_rate": 0.0}
+        net_builder = self.net_builder_fn(net_name, peft_config, vit_config)
+        self.model = net_builder(
+            num_classes=num_classes,
             pretrained=True,
             pretrained_path="",
         ).to(self.device)
+        self.ema_model = copy.deepcopy(self.model).to(self.device)
+        for p in self.ema_model.parameters():
+            p.requires_grad_(False)
 
-    def _eval_transform(self, img_size: int = 224):
+        self.sup_criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+        self.unsup_criterion = _SoftTargetCrossEntropy()
+
+    def _build_eval_transform(self, img_size: int = 224):
         resize = int(img_size * 256 / 224)
         return T.Compose(
             [
                 T.Resize(resize, interpolation=T.InterpolationMode.BICUBIC),
                 T.CenterCrop(img_size),
                 T.ToTensor(),
-                T.Normalize(
-                    mean=[0.48145466, 0.4578275, 0.40821073],
-                    std=[0.26862954, 0.26130258, 0.27577711],
-                ),
+                T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
             ]
         )
 
-    def fit(self, img_dir, train_ann_file, unlabel_ann_file):
+    def _build_weak_transform(self, img_size: int = 224):
+        return T.Compose(
+            [
+                T.RandomResizedCrop(
+                    img_size,
+                    scale=(0.7, 1.0),
+                    interpolation=T.InterpolationMode.BICUBIC,
+                ),
+                T.RandomHorizontalFlip(),
+                T.ToTensor(),
+                T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+            ]
+        )
 
-        cat_id_to_idx, idx_to_cat_id, num_classes = _coco_label_mapping(train_ann_file)
+    def _build_strong_transform(self, img_size: int = 224):
+        return T.Compose(
+            [
+                T.RandomResizedCrop(
+                    img_size,
+                    scale=(0.5, 1.0),
+                    interpolation=T.InterpolationMode.BICUBIC,
+                ),
+                T.RandomHorizontalFlip(),
+                T.RandomApply([T.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
+                T.RandomGrayscale(p=0.2),
+                T.RandomApply([T.GaussianBlur(kernel_size=5, sigma=(0.1, 2.0))], p=0.3),
+                T.RandomAutocontrast(p=0.2),
+                T.RandomEqualize(p=0.1),
+                T.ToTensor(),
+                T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+            ]
+        )
+
+    @torch.no_grad()
+    def _update_ema(self, decay=0.999):
+        msd = self.model.state_dict()
+        esd = self.ema_model.state_dict()
+        for k in esd.keys():
+            if esd[k].dtype.is_floating_point:
+                esd[k].mul_(decay).add_(msd[k], alpha=1.0 - decay)
+            else:
+                esd[k].copy_(msd[k])
+
+    def fit(self, img_dir, train_ann_file, unlabel_ann_file):
+        cat_id_to_idx, idx_to_cat_id, num_classes = _build_label_mappings(
+            train_ann_file
+        )
         self.idx_to_cat_id = idx_to_cat_id
         self.num_classes = num_classes
 
-        train_tf = T.Compose(
-            [
-                T.RandomResizedCrop(224, scale=(0.7, 1.0), interpolation=T.InterpolationMode.BICUBIC),
-                T.RandomRotation(degrees=10),
-                T.RandomPerspective(distortion_scale=0.2, p=0.5),
-                T.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1), shear=10),
-                T.RandomGrayscale(p=0.2),
-                T.RandomAdjustSharpness(sharpness_factor=2, p=0.2),
-                T.RandomAutocontrast(p=0.2),
-                T.RandomEqualize(p=0.2),
-                T.RandomPosterize(bits=4, p=0.2),
-                T.RandomHorizontalFlip(),
-                T.ToTensor(),
-                T.Normalize(
-                    mean=[0.48145466, 0.4578275, 0.40821073],
-                    std=[0.26862954, 0.26130258, 0.27577711],
-                ),
-            ]
-        )
-        self.transform = self._eval_transform(224)
+        labeled_samples = _load_labeled_samples(img_dir, train_ann_file, cat_id_to_idx)
+        unlabeled_samples = _load_unlabeled_samples(img_dir, unlabel_ann_file)
 
-        samples = _labeled_samples(img_dir, train_ann_file, cat_id_to_idx)
-        if len(samples) == 0:
-            raise RuntimeError("No labeled samples found; check img_dir and train_ann_file.")
+        if len(labeled_samples) == 0:
+            raise RuntimeError("No labeled samples found.")
+        if len(unlabeled_samples) == 0:
+            raise RuntimeError("No unlabeled samples found.")
 
-        ds = _LabeledDataset(samples, train_tf)
-        bs = min(self.batch_size, len(ds))
-        loader = DataLoader(
-            ds,
-            batch_size=bs,
+        weak_tf = self._build_weak_transform()
+        strong_tf = self._build_strong_transform()
+        self.transform = self._build_eval_transform()
+
+        labeled_ds = _LabeledDataset(labeled_samples, weak_tf)
+        unlabeled_ds = _UnlabeledPairDataset(unlabeled_samples, weak_tf, strong_tf)
+
+        labeled_bs = min(32, len(labeled_ds))
+        unlabeled_bs = 96 if len(unlabeled_ds) >= 96 else max(16, len(unlabeled_ds))
+
+        labeled_loader = DataLoader(
+            labeled_ds,
+            batch_size=labeled_bs,
             shuffle=True,
-            num_workers=min(4, os.cpu_count() or 0),
+            num_workers=min(8, os.cpu_count() or 1),
             pin_memory=self.device.type == "cuda",
-            drop_last=False,
+            drop_last=True if len(labeled_ds) >= labeled_bs else False,
+        )
+        unlabeled_loader = DataLoader(
+            unlabeled_ds,
+            batch_size=unlabeled_bs,
+            shuffle=True,
+            num_workers=min(8, os.cpu_count() or 1),
+            pin_memory=self.device.type == "cuda",
+            drop_last=True if len(unlabeled_ds) >= unlabeled_bs else False,
         )
 
-        params = [p for p in self.model.parameters() if p.requires_grad]
-        opt = torch.optim.AdamW(params, lr=self.lr, weight_decay=0.05)
+        class_counts = torch.zeros(num_classes, dtype=torch.float32)
+        for _, y in labeled_samples:
+            class_counts[y] += 1
+        target_prior = (class_counts / class_counts.sum()).to(self.device)
+
+        trainable = [p for p in self.model.parameters() if p.requires_grad]
+        optimizer = torch.optim.AdamW(trainable, lr=3e-4, weight_decay=0.05)
+
+        total_epochs = 20
+        warmup_epochs = 5
+        conf_thresh = 0.90
+        lambda_u_max = 2.0
+        entropy_weight = 0.05
+        dist_hist = deque(maxlen=128)
+
         self.model.train()
-        for _ in range(self.train_epochs):
-            for x, y in loader:
+        self.ema_model.load_state_dict(copy.deepcopy(self.model.state_dict()))
+
+        # Stage 1: supervised warmup
+        for epoch in range(warmup_epochs):
+            self.model.train()
+            total_loss = 0.0
+            total_correct = 0
+            total_count = 0
+
+            for x, y in labeled_loader:
                 x = x.to(self.device, non_blocking=True)
                 y = y.to(self.device, non_blocking=True)
-                opt.zero_grad(set_to_none=True)
-                out = self.model(x)
-                loss = F.cross_entropy(out["logits"], y)
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(params, 1.0)
-                opt.step()
-            print(f"Epoch {_ + 1} loss: {loss.item()}")
 
+                optimizer.zero_grad(set_to_none=True)
+                out = self.model(x)
+                logits = out["logits"]
+                loss = self.sup_criterion(logits, y)
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(trainable, 1.0)
+                optimizer.step()
+                self._update_ema(decay=0.995)
+
+                total_loss += loss.item() * y.size(0)
+                total_correct += (logits.argmax(dim=-1) == y).sum().item()
+                total_count += y.size(0)
+
+            print(
+                f"[warmup {epoch+1}/{warmup_epochs}] "
+                f"loss={total_loss/max(total_count,1):.4f} "
+                f"acc={total_correct/max(total_count,1):.4f}"
+            )
+
+        # Stage 2: semi-supervised consistency learning
+        unlabeled_iter = iter(unlabeled_loader)
+        steps_per_epoch = max(len(labeled_loader), 1)
+
+        for epoch in range(warmup_epochs, total_epochs):
+            self.model.train()
+            total_sup = 0.0
+            total_unsup = 0.0
+            total_ent = 0.0
+            total_acc = 0
+            total_lab = 0
+            total_mask = 0.0
+            total_u = 0
+
+            lambda_u = lambda_u_max * min(
+                1.0,
+                (epoch - warmup_epochs + 1)
+                / max(1, (total_epochs - warmup_epochs) * 0.4),
+            )
+
+            for x_l, y_l in labeled_loader:
+                try:
+                    x_uw, x_us = next(unlabeled_iter)
+                except StopIteration:
+                    unlabeled_iter = iter(unlabeled_loader)
+                    x_uw, x_us = next(unlabeled_iter)
+
+                x_l = x_l.to(self.device, non_blocking=True)
+                y_l = y_l.to(self.device, non_blocking=True)
+                x_uw = x_uw.to(self.device, non_blocking=True)
+                x_us = x_us.to(self.device, non_blocking=True)
+
+                optimizer.zero_grad(set_to_none=True)
+
+                out_l = self.model(x_l)
+                logits_l = out_l["logits"]
+                sup_loss = self.sup_criterion(logits_l, y_l)
+
+                with torch.no_grad():
+                    teacher_out = self.ema_model(x_uw)
+                    logits_uw = teacher_out["logits"]
+                    probs_uw = F.softmax(logits_uw, dim=-1)
+
+                    batch_mean = probs_uw.mean(dim=0)
+                    dist_hist.append(batch_mean.detach())
+                    running_model_dist = torch.stack(list(dist_hist), dim=0).mean(dim=0)
+
+                    aligned = probs_uw * (
+                        target_prior / running_model_dist.clamp_min(1e-6)
+                    ).unsqueeze(0)
+                    aligned = aligned / aligned.sum(dim=-1, keepdim=True).clamp_min(
+                        1e-6
+                    )
+
+                    conf, _ = aligned.max(dim=-1)
+                    mask = (conf >= conf_thresh).float()
+
+                out_us = self.model(x_us)
+                logits_us = out_us["logits"]
+
+                if mask.sum() > 0:
+                    per_sample_unsup = -(
+                        aligned * F.log_softmax(logits_us, dim=-1)
+                    ).sum(dim=-1)
+                    unsup_loss = (per_sample_unsup * mask).sum() / mask.sum().clamp_min(
+                        1.0
+                    )
+
+                    probs_us = F.softmax(logits_us, dim=-1)
+                    ent = -(probs_us * torch.log(probs_us.clamp_min(1e-8))).sum(dim=-1)
+                    ent_loss = (ent * mask).sum() / mask.sum().clamp_min(1.0)
+                else:
+                    unsup_loss = logits_us.sum() * 0.0
+                    ent_loss = logits_us.sum() * 0.0
+
+                loss = sup_loss + lambda_u * unsup_loss + entropy_weight * ent_loss
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(trainable, 1.0)
+                optimizer.step()
+                self._update_ema(decay=0.999)
+
+                total_sup += sup_loss.item() * y_l.size(0)
+                total_unsup += unsup_loss.item() * x_uw.size(0)
+                total_ent += ent_loss.item() * x_uw.size(0)
+                total_acc += (logits_l.argmax(dim=-1) == y_l).sum().item()
+                total_lab += y_l.size(0)
+                total_mask += mask.sum().item()
+                total_u += mask.numel()
+
+            print(
+                f"[ssl {epoch+1}/{total_epochs}] "
+                f"sup={total_sup/max(total_lab,1):.4f} "
+                f"unsup={total_unsup/max(total_u,1):.4f} "
+                f"ent={total_ent/max(total_u,1):.4f} "
+                f"acc={total_acc/max(total_lab,1):.4f} "
+                f"mask_rate={total_mask/max(total_u,1):.4f} "
+                f"lambda_u={lambda_u:.3f}"
+            )
+
+        self.model.load_state_dict(self.ema_model.state_dict())
         self.model.eval()
 
     @torch.no_grad()
@@ -178,14 +388,17 @@ class ClassificationAgent:
             raise RuntimeError("Call fit() before predict().")
 
         self.model.eval()
+
         if isinstance(image_batch, torch.Tensor):
-            x = image_batch.float().to(self.device, non_blocking=True)
+            x = image_batch.to(self.device, non_blocking=True).float()
+            if x.ndim == 3:
+                x = x.unsqueeze(0)
         elif isinstance(image_batch, list):
-            x = torch.stack([self.transform(im.convert("RGB")) for im in image_batch], dim=0).to(
-                self.device, non_blocking=True
-            )
+            x = torch.stack(
+                [self.transform(im.convert("RGB")) for im in image_batch], dim=0
+            ).to(self.device, non_blocking=True)
         else:
-            raise TypeError("image_batch must be a Tensor or list of PIL images")
+            raise TypeError("image_batch must be a torch.Tensor or list of PIL images")
 
         out = self.model(x)
         logits = out["logits"]
