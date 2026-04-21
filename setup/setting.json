@@ -1,0 +1,12 @@
+{
+    "metric":{
+        "noisy_val":{
+            "SL":"You have access to a very small training set and a validation set. Your output will be evaluated using a standardized evaluation script which will return a limited proxy validation metric as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the full validation set. ",
+            "SSL":"You have access to a very small training set, a validation set and a set of unlabelled datapoints. Your output will be evaluated using a standardized evaluation script which will return a limited proxy validation metric as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the full validation set. "
+        },
+        "unsupervised_metric":{
+            "SL":"You have access to a very small training set, a validation set. Your output will be evaluated using a standardized evaluation script which will return a set of unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set. ",
+            "SSL":"You have access to a very small training set, a validation set and a set of unlabelled datapoints. Your output will be evaluated using a standardized evaluation script which will return a set of unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set. "
+        }
+    }
+}

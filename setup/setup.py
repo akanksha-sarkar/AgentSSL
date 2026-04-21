@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Create an experiment directory and copy annotations from setup/datasets (no symlinks).
+Create an experiment directory and copy annotations from setup/datasets.
 
-Optionally copy evaluate.py + binds from setup/evaluate/{metric}/{learning}/ and setup/binds,
-with NUM_CLASSES filled from setup/dataset.json.
+Optionally copy evaluate.py from setup/evaluate/{metric}/{learning}/ and copy each item
+from setup/binds directly into the experiment folder (no binds/ wrapper), with NUM_CLASSES
+filled from setup/dataset.json.
 
 Layout:
   {root}/{dataset}/{setting}/{split}/{seed}/
@@ -16,9 +17,10 @@ Example:
     --metric unsupervised_metric --learning SSL
 
 Creates:
-  .../seed0/annotations/  (copy)
-  .../seed0/evaluate.py   (from setup/evaluate/unsupervised_metric/SSL/evaluate.py, NUM_CLASSES set)
-  .../seed0/binds/        (copy of setup/binds)
+  .../seed0/annotations/   (copy)
+  .../seed0/evaluate.py   (from setup/evaluate/{metric}/{learning}/evaluate.py, NUM_CLASSES set)
+  .../seed0/program2.py, nets/, src/, ...  (contents of setup/binds, flat into seed dir)
+  .../seed0/description.md (from setup/description.md + objective from setting.json + dataset blurb from dataset.json for this split)
 """
 from __future__ import annotations
 
@@ -116,15 +118,82 @@ def _substitute_num_classes(py_source: str, num_classes: int) -> str:
     return out
 
 
-def _copy_tree_merge(src: Path, dst: Path, *, force: bool) -> None:
-    if not src.is_dir():
-        raise FileNotFoundError(f"Not a directory: {src}")
-    if dst.exists():
-        if not force:
-            raise FileExistsError(f"{dst} already exists; use --force to replace")
-        _remove_path(dst)
-    shutil.copytree(src, dst, symlinks=False)
-    print(f"copied {src} -> {dst}")
+def _copy_binds_contents_into_target(src_binds: Path, target: Path, *, force: bool) -> None:
+    """Copy every file/dir inside src_binds into target/ (not target/binds/)."""
+    if not src_binds.is_dir():
+        raise FileNotFoundError(f"Not a directory: {src_binds}")
+    target.mkdir(parents=True, exist_ok=True)
+    for child in sorted(src_binds.iterdir()):
+        dst = target / child.name
+        if dst.exists() or dst.is_symlink():
+            if not force:
+                raise FileExistsError(
+                    f"{dst} already exists; use --force to replace (from binds)"
+                )
+            _remove_path(dst)
+        if child.is_dir():
+            shutil.copytree(child, dst, symlinks=False)
+        elif child.is_file():
+            shutil.copy2(child, dst)
+    print(f"binds: copied contents of {src_binds} -> {target}")
+
+
+def _inject_description_md(
+    template: str, objective_text: str, dataset_text: str
+) -> str:
+    """
+    Insert objective_text before '### Dataset specification' and dataset_text
+    after that heading (before '### Model Interface').
+    """
+    m_ds = re.search(r"(?m)^### Dataset specification\s*$", template)
+    m_mi = re.search(r"(?m)^### Model Interface\s*$", template)
+    if not m_ds or not m_mi or m_ds.start() >= m_mi.start():
+        raise ValueError(
+            "setup/description.md must contain '### Dataset specification' "
+            "before '### Model Interface'"
+        )
+    head = template[: m_ds.start()].rstrip()
+    tail = template[m_mi.start() :]
+    ds_heading = "### Dataset specification"
+    return (
+        head
+        + "\n\n"
+        + objective_text.strip()
+        + "\n\n"
+        + ds_heading
+        + "\n\n"
+        + dataset_text.strip()
+        + "\n\n"
+        + tail
+    )
+
+
+def _load_setting_objective(setting_json: Path, metric: str, learning: str) -> str:
+    data = json.loads(setting_json.read_text(encoding="utf-8"))
+    try:
+        text = data["metric"][metric][learning]
+    except (KeyError, TypeError) as e:
+        raise KeyError(
+            f"setting.json missing metric[{metric!r}][{learning!r}]"
+        ) from e
+    if not isinstance(text, str) or not text.strip():
+        raise ValueError(
+            f"setting.json metric[{metric!r}][{learning!r}] must be a non-empty string"
+        )
+    return text
+
+
+def _load_dataset_description(dataset_entry: dict, split: str) -> str:
+    if split not in dataset_entry:
+        keys = [k for k in dataset_entry if k != "num_classes" and k != "setup_subdir"]
+        raise KeyError(
+            f"dataset.json entry has no description for split {split!r}. "
+            f"Available keys (besides metadata): {keys}"
+        )
+    text = dataset_entry[split]
+    if not isinstance(text, str) or not text.strip():
+        raise ValueError(f"dataset.json description for split {split!r} must be non-empty")
+    return text
 
 
 def main() -> int:
@@ -164,12 +233,17 @@ def main() -> int:
     ap.add_argument(
         "--no-binds",
         action="store_true",
-        help="With --metric/--learning: do not copy setup/binds",
+        help="With --metric/--learning: do not copy setup/binds contents into experiment dir",
+    )
+    ap.add_argument(
+        "--no-description",
+        action="store_true",
+        help="With --metric/--learning: do not write description.md from template + JSON",
     )
     ap.add_argument(
         "--force",
         action="store_true",
-        help="Replace existing annotations / evaluate.py / binds if present",
+        help="Replace existing annotations / evaluate.py / files merged from binds if present",
     )
     args = ap.parse_args()
 
@@ -244,15 +318,51 @@ def main() -> int:
 
         if not args.no_binds:
             src_binds = setup_dir / "binds"
-            dst_binds = target / "binds"
             try:
-                _copy_tree_merge(src_binds, dst_binds, force=args.force)
+                _copy_binds_contents_into_target(src_binds, target, force=args.force)
             except FileNotFoundError as e:
                 print(f"ERROR: {e}", file=sys.stderr)
                 return 1
             except FileExistsError as e:
                 print(f"ERROR: {e}", file=sys.stderr)
                 return 1
+
+        if not args.no_description:
+            setting_json = setup_dir / "setting.json"
+            desc_tmpl = setup_dir / "description.md"
+            if not setting_json.is_file():
+                print(f"ERROR: {setting_json} not found", file=sys.stderr)
+                return 1
+            if not desc_tmpl.is_file():
+                print(f"ERROR: {desc_tmpl} not found", file=sys.stderr)
+                return 1
+            try:
+                objective_text = _load_setting_objective(
+                    setting_json, args.metric, args.learning
+                )
+                dataset_text = _load_dataset_description(entry, split)
+            except KeyError as e:
+                print(f"ERROR: {e}", file=sys.stderr)
+                return 1
+            except ValueError as e:
+                print(f"ERROR: {e}", file=sys.stderr)
+                return 1
+
+            tmpl_body = desc_tmpl.read_text(encoding="utf-8")
+            try:
+                desc_out = _inject_description_md(
+                    tmpl_body, objective_text, dataset_text
+                )
+            except ValueError as e:
+                print(f"ERROR: {e}", file=sys.stderr)
+                return 1
+
+            dest_desc = target / "description.md"
+            if dest_desc.exists() and not args.force:
+                print(f"ERROR: {dest_desc} exists; use --force", file=sys.stderr)
+                return 1
+            dest_desc.write_text(desc_out, encoding="utf-8")
+            print(f"description.md: wrote {dest_desc}")
 
     if args.no_annotations:
         return 0
