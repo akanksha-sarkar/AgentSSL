@@ -1,4 +1,4 @@
-# THIS PROGRAM GOT A FITNESS SCORE OF 0.0833
+# THIS PROGRAM GOT A FITNESS SCORE OF 0.3281
 from __future__ import annotations
 import json
 import os
@@ -51,7 +51,7 @@ class _LabeledDataset(Dataset):
 
 
 class ClassificationAgent:
-    NET_NAME = "timm/vit_base_patch14_reg4_dinov2.lvd142m"
+    NET_NAME = "timm/vit_base_patch16_clip_224.openai"
     PEFT_CONFIG = {
     "method_name": "lora_1",
     "lora_bottleneck": 4

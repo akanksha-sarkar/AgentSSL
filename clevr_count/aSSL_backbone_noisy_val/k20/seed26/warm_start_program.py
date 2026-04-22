@@ -1,4 +1,4 @@
-# THIS PROGRAM GOT A FITNESS SCORE OF 0.3281
+# THIS PROGRAM GOT A FITNESS SCORE OF 0.4188
 from __future__ import annotations
 import json
 import os
@@ -53,10 +53,15 @@ class _LabeledDataset(Dataset):
 class ClassificationAgent:
     NET_NAME = "timm/vit_base_patch16_clip_224.openai"
     PEFT_CONFIG = {
-    "method_name": "lora_1",
-    "lora_bottleneck": 4
+    "method_name": "adaptformer",
+    "ft_mlp_module": "adapter",
+    "ft_mlp_mode": "parallel",
+    "ft_mlp_ln": "before",
+    "adapter_init": "lora_kaiming",
+    "adapter_bottleneck": 4,
+    "adapter_scaler": 0.1
 }
-    TRAIN_EPOCHS = 50
+    TRAIN_EPOCHS = 100
     def __init__(self, net_builder_fn, get_peft_config_fn, num_classes=8):
         self.net_builder_fn = net_builder_fn
         self.get_peft_config_fn = get_peft_config_fn

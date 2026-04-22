@@ -73,7 +73,7 @@ def build_program_from_best_result(
 
 
 if __name__ == "__main__":
-    for dataset in ["clevr_count", "dtd", "resisc45", "kitti", "sun397"]:
+    for dataset in ["clevr_count"]:
         if dataset == "clevr_count":
             num_classes = 8
         elif dataset == "dtd":
