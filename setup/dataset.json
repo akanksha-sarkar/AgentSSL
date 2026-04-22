@@ -26,7 +26,7 @@
     },
     "retino": {
         "num_classes": 5, 
-        "k40":"None",
-        "k80":"None"
+        "k40":"A large-scale medical imaging dataset consisting of high-resolution color photographs of the back of the eye, used to assess the presence and severity of a vision-threatening disease. Each image is labeled on an ordinal scale reflecting disease progression, ranging from no visible abnormalities to advanced stages with significant retinal damage forming 5 classes. The dataset is balanced across these 5 classes. Your training dataset contains 40 images per class for a total of just 200 images. Your unlabeled dataset has 24388 datapoints.",
+        "k80":"A large-scale medical imaging dataset consisting of high-resolution color photographs of the back of the eye, used to assess the presence and severity of a vision-threatening disease. Each image is labeled on an ordinal scale reflecting disease progression, ranging from no visible abnormalities to advanced stages with significant retinal damage forming 5 classes. The dataset is balanced across these 5 classes. Your training dataset contains 80 images per class for a total of just 400 images. Your unlabeled dataset has 24188 datapoints."
     }
 }
