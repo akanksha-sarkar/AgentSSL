@@ -1,66 +1,96 @@
 import os
-import json
-from pathlib import Path
-
 from PIL import Image
 import torch
 from torch.utils.data import Dataset
 from pycocotools.coco import COCO
 import torchvision.transforms.functional as TF
-
-
-def _first_json_in_ann_dir(ann_dir: Path) -> Path:
-    """ann_dir is either a .json file or a directory containing one."""
-    ann_dir = Path(ann_dir)
-    if ann_dir.is_file():
-        return ann_dir
-    jsons = sorted(ann_dir.glob("*.json"))
-    if not jsons:
-        raise FileNotFoundError(f"No .json found under {ann_dir}")
-    return jsons[0]
-
-
-def _filename_to_image_id_from_ann(data) -> dict:
-    """Build basename -> COCO image id from annotations only (no labels)."""
-    if isinstance(data, dict) and "images" in data:
-        return {
-            Path(img["file_name"]).name: img["id"]
-            for img in data["images"]
-            if "file_name" in img and "id" in img
-        }
-    if isinstance(data, list):
-        m = {}
-        for i, r in enumerate(data):
-            name = Path(r.get("image_path", r.get("file_name", ""))).name
-            if name:
-                m[name] = r.get("id", i + 1)
-        return m
-    raise ValueError("Annotations must be a COCO dict with 'images' or a list of records")
-
+from pathlib import Path
+import json
 
 class UnlabelledDataset(Dataset):
     """
-    Images that appear in the annotation file and exist on disk.
+    A dataset for unlabeled images.
 
-    Loads the real JSON on disk (including any annotations block), but only the
-    ``images`` / list-record identity fields are used to build ``file_to_coco_id``.
-    Nothing on this object exposes ground-truth category_id to user code: ``coco``
-    is always None; ``__getitem__`` meta is only file_name and image_id.
+    Modes:  [1] No annotations -> just list images from img_dir.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+            [2] Annotations -> use it to define img_ids consistently, but DO NOT return labels.
     """
-
-    def __init__(self, img_dir, ann_dir, transform=None):
+    def __init__(self, img_dir, ann_dir=None, transform=None):
         self.img_dir = Path(img_dir)
+        self.ann_dir = Path(ann_dir) if ann_dir is not None else None
         self.transform = transform
+
+        # default: all files in img_dir
+        self.img_ids = sorted([f for f in os.listdir(self.img_dir) if not f.startswith(".")])
+
         self.coco = None
+        self.file_to_coco_id = {}
 
-        with open(_first_json_in_ann_dir(Path(ann_dir))) as f:
-            self.file_to_coco_id = _filename_to_image_id_from_ann(json.load(f))
+        # If ann_dir provided, try to load a json, but don't require it
+        if self.ann_dir is not None and self.ann_dir.exists():
+            ann_files = sorted(self.ann_dir.glob("*.json"))
+            if len(ann_files) > 0:
+                ann_path = ann_files[0]
 
-        on_disk = {
-            p.name for p in self.img_dir.iterdir()
-            if p.is_file() and not p.name.startswith(".")
-        }
-        self.img_ids = sorted(on_disk & self.file_to_coco_id.keys())
+                # accept list-format annotations by converting to COCO (ignore labels if missing)
+                with open(ann_path, "r") as f:
+                    data = json.load(f)
+
+                if isinstance(data, list):
+                    images = []
+                    annotations = []
+                    label_set = set()
+
+                    for i, r in enumerate(data):
+                        img_id = i + 1
+                        file_name = Path(r.get("image_path", r.get("file_name", ""))).name
+                        w = int(r.get("width", 0))
+                        h = int(r.get("height", 0))
+
+                        if file_name == "":
+                            # skip malformed records
+                            continue
+
+                        images.append({
+                            "id": img_id,
+                            "file_name": file_name,
+                            "width": w,
+                            "height": h,
+                        })
+
+                        # If a label exists, we can still store an annotation, but it's unused.
+                        if "label" in r:
+                            label = int(r["label"])
+                            annotations.append({
+                                "id": len(annotations) + 1,
+                                "image_id": img_id,
+                                "category_id": label,
+                            })
+                            label_set.add(label)
+
+                    categories = [{"id": lab, "name": str(lab)} for lab in sorted(label_set)] if label_set else []
+                    coco_dict = {"images": images, "annotations": annotations, "categories": categories}
+
+                    converted_path = ann_path.with_name(ann_path.stem + "_coco.json")
+                    if not converted_path.exists():
+                        with open(converted_path, "w") as f:
+                            json.dump(coco_dict, f)
+
+                    ann_path = converted_path
+
+                # Load COCO (even if it has 0 annotations; images section is enough)
+                self.coco = COCO(str(ann_path))
+
+                # filename -> coco image id
+                self.file_to_coco_id = {
+                    img["file_name"]: img["id"]
+                    for img in self.coco.dataset.get("images", [])
+                }
+
+                # Keep only images that exist on disk AND appear in COCO images list
+                self.img_ids = [
+                    fn for fn in self.img_ids
+                    if fn in self.file_to_coco_id
+                ]
 
     def __len__(self):
         return len(self.img_ids)
@@ -68,16 +98,18 @@ class UnlabelledDataset(Dataset):
     def __getitem__(self, idx):
         file_name = self.img_ids[idx]
         img_path = self.img_dir / file_name
-
         image = Image.open(img_path).convert("RGB")
+
         if self.transform is not None:
             image = self.transform(image)
         else:
             image = TF.to_tensor(image)
 
+        coco_img_id = self.file_to_coco_id.get(file_name, None)
+
         meta = {
             "file_name": file_name,
-            "image_id": self.file_to_coco_id.get(file_name, None),
+            "image_id": coco_img_id,   # None if no COCO loaded
         }
         return image, meta
 
@@ -97,23 +129,12 @@ class ClassificationDataset(Dataset):
         self.transform = transform
         self.img_ids = os.listdir(self.img_dir)
 
-        # ann_dir may be a directory (first *.json) or a direct path to a .json file
-        p = self.ann_dir
-        if p.suffix.lower() == ".json":
-            if not p.exists():
-                raise FileNotFoundError(f"Annotation file not found: {p}")
-            if not p.is_file():
-                raise FileNotFoundError(f"Annotation path is not a file: {p}")
-            ann_path = p
-        elif p.is_dir():
-            ann_files = sorted(p.glob("*.json"))
-            if len(ann_files) == 0:
-                raise FileNotFoundError(f"No .json files found in {p}")
-            ann_path = ann_files[0]
-        else:
-            raise FileNotFoundError(
-                f"Annotation path not found (use a .json file or a directory): {p}"
-            )
+        # load the first json file in ann_dir
+        ann_files = sorted(self.ann_dir.glob("*.json"))
+        if len(ann_files) == 0:
+            raise FileNotFoundError(f"No .json files found in {self.ann_dir}")
+
+        ann_path = ann_files[0]
 
         # ---------- NEW: accept list-format annotations by converting to COCO ----------
         with open(ann_path, "r") as f:
@@ -160,9 +181,9 @@ class ClassificationDataset(Dataset):
 
         self.coco = COCO(str(ann_path))
 
-        # map filename -> COCO image_id for quick lookup (basename matches os.listdir)
+        # map filename -> COCO image_id for quick lookup
         self.file_to_coco_id = {
-            Path(img["file_name"]).name: img["id"]
+            img["file_name"]: img["id"]
             for img in self.coco.dataset["images"]
         }
 
@@ -208,6 +229,7 @@ class ClassificationDataset(Dataset):
 
     
 def collate_fn(batch):
+    # Keep on CPU here; DataLoader workers must not use CUDA (fork). Move to device in training loop.
     images, labels = zip(*batch)
     images = torch.stack(images, dim=0)
     labels = torch.tensor(labels, dtype=torch.long)
