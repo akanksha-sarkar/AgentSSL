@@ -53,8 +53,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="Dry run")
     args = parser.parse_args()
-    datasets = ["kitti"]
-    eval_methods = ["unsupervised"]
+    datasets = ["clevr_count"]
+    eval_methods = ["noisy_val"]
 
     launched = 0
     for dataset in datasets:

@@ -150,12 +150,12 @@ def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_me
 
 
 HYPERPARAMETERS = {
-    "net_name": ["timm/vit_base_patch14_reg4_dinov2.lvd142m"],
+    "net_name": ["timm/vit_base_patch14_reg4_dinov2.lvd142m", "timm/vit_base_patch16_clip_224.openai"],
     "peft_config": [
         {"method_name": "lora_1", "lora_bottleneck": 4},
         {"method_name": "adaptformer", "ft_mlp_module": "adapter", "ft_mlp_mode": "parallel", "ft_mlp_ln": "before", "adapter_init": "lora_kaiming", "adapter_bottleneck": 4, "adapter_scaler": 0.1},
     ],
-    "train_epochs": [13, 50,100],
+    "train_epochs": [50,100],
 }
 if __name__ == "__main__":
     import argparse
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
 
-    root_dir = f"/home/as2637/agentSSL/{dataset}/aSSL_backbone_{eval_method}/k{shot}/seed{seed}"
+    root_dir = f"/home/eyl45/Sun/AgentSSL/{dataset}/aSSL_backbone_{eval_method}/k{shot}/seed{seed}"
     data_dir = f"/share/j_sun/agentSSL/{dataset}/data"
     program_path = os.path.join("setup/warmstart/warm_start_program.py")
 
