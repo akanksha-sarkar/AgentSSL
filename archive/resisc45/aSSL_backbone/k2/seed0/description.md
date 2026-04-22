@@ -73,7 +73,7 @@ You must implement the following class in your program:
 ```python
 
 class ClassificationAgent:
-    def __init__(self, net_builder_fn, get_peft_config_fn, num_classes):
+    def __init__(self, net_builder_fn, get_peft_config_fn, num_classes=45):
         self.transform = pass # class must include self.transform
         self.model = pass # The model you predict with.
     def fit(self, img_dir, train_ann_file, unlabel_ann_file):

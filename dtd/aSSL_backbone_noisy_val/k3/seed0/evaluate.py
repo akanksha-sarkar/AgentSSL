@@ -256,25 +256,35 @@ if __name__ == "__main__":
             val_img_dir = os.path.join(data_dir, "images", "train")
             val_ann_file = os.path.join(root_dir, "annotations", "val", f"seed{n}", "annotations", "noisy_val", "noisy_val.json")
 
-            from nets.net_builder import get_net_builder
-            from nets.peft import get_peft_config
-            agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config, num_classes=NUM_CLASSES)
+            try:
+                from nets.net_builder import get_net_builder
+                from nets.peft import get_peft_config
+                agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config, num_classes=NUM_CLASSES)
 
-            print(f"[main] refit train_ann_file={train_ann_file}", flush=True)
-            print(f"[main] refit val_ann_file={val_ann_file}", flush=True)
-            t_fit = time.perf_counter()
-            if exp_setting == "SL": 
-                agent.fit(train_img_dir, train_ann_file)
-            else:
-                agent.fit(train_img_dir, train_ann_file, unlabel_ann_file) 
-            print(f"[main] refit done in {time.perf_counter() - t_fit:.2f}s", flush=True)
-         
-            t_nv = time.perf_counter()
-            acc = run_noisy_val(agent, val_img_dir, val_ann_file)
-            print(f"[main] run_noisy_val acc={acc} in {time.perf_counter() - t_nv:.2f}s", flush=True)
-            acc_lst.append(acc)
+                print(f"[main] refit train_ann_file={train_ann_file}", flush=True)
+                print(f"[main] refit val_ann_file={val_ann_file}", flush=True)
+                t_fit = time.perf_counter()
+                if exp_setting == "SL": 
+                    agent.fit(train_img_dir, train_ann_file)
+                else:
+                    agent.fit(train_img_dir, train_ann_file, unlabel_ann_file) 
+                print(f"[main] refit done in {time.perf_counter() - t_fit:.2f}s", flush=True)
+             
+                t_nv = time.perf_counter()
+                acc = run_noisy_val(agent, val_img_dir, val_ann_file)
+                print(f"[main] run_noisy_val acc={acc} in {time.perf_counter() - t_nv:.2f}s", flush=True)
+                acc_lst.append(acc)
+            except FileNotFoundError:
+                pass
 
-        eval_dict = {"fitness": np.mean(acc_lst)}
+        if not acc_lst:
+            print(
+                "WARNING: no noisy_val seed completed (missing files?); fitness set to nan.",
+                flush=True,
+            )
+            eval_dict = {"fitness": float("nan")}
+        else:
+            eval_dict = {"fitness": np.mean(acc_lst)}
         print("METRICS:", eval_dict)
 
     else: 

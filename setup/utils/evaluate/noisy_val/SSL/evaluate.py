@@ -1,12 +1,34 @@
 """
 Evaluator for classification programs using a single-image predict interface.
 """
+import sys
 import os
 import time
 import numpy as np
+
+# Replaced by setup/setup.py from setup/dataset.json (num_classes for this dataset)
+NUM_CLASSES = 47
+
+exp_setting = "SSL"
+eval_setting = "noisy_val"
+# Before numpy/sklearn/torch: avoid OpenBLAS/MKL threading segfaults on some clusters.
+for _k, _v in (
+    ("OMP_NUM_THREADS", "1"),
+    ("MKL_NUM_THREADS", "1"),
+    ("OPENBLAS_NUM_THREADS", "1"),
+    ("NUMEXPR_NUM_THREADS", "1"),
+):
+    os.environ.setdefault(_k, _v)
+
+# Add the Apptainer bind mount path to Python's module search
+sys.path.insert(0, "/work")
+
 import faulthandler
 
 faulthandler.enable()
+
+print("✅ Added /work to sys.path")
+print("Working dir:", os.getcwd())
 
 import json
 import importlib.util
@@ -16,7 +38,10 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from utils.dataset import ClassificationDataset
+try:
+    from utils.dataset import ClassificationDataset
+except ImportError:
+    from src.dataset import ClassificationDataset
 
 def load_program(program_path):
     spec = importlib.util.spec_from_file_location("program", program_path)
@@ -43,6 +68,38 @@ def load_ground_truth(val_ann_file):
             gt[file_name] = category_id
 
     return gt
+
+
+def evaluate_agent(agent, val_img_dir, ground_truth):
+    correct = 0
+    total = 0
+
+    for file_name, true_cat in ground_truth.items():
+        img_path = os.path.join(val_img_dir, file_name)
+
+        if not os.path.isfile(img_path):
+            continue
+
+        image = Image.open(img_path).convert("RGB")
+        x = agent.transform(image).unsqueeze(0)
+        _, _, predictions = agent.predict(x)
+        pred = predictions[0]
+
+        if not isinstance(pred, dict):
+            continue
+        if "category_id" not in pred:
+            continue
+
+        total += 1
+        if pred["category_id"] == true_cat:
+            correct += 1
+
+    acc = correct / total if total > 0 else 0.0
+
+    return {
+        "top1_accuracy": acc,
+        "fitness": acc,
+    }
 
 def calculate_fitness(eval_dict, scores_to_use):
     """
@@ -202,25 +259,35 @@ if __name__ == "__main__":
             val_img_dir = os.path.join(data_dir, "images", "train")
             val_ann_file = os.path.join(root_dir, "annotations", "val", f"seed{n}", "annotations", "noisy_val", "noisy_val.json")
 
-            from nets.net_builder import get_net_builder
-            from nets.peft import get_peft_config
-            agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config, num_classes=NUM_CLASSES)
+            try:
+                from nets.net_builder import get_net_builder
+                from nets.peft import get_peft_config
+                agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config, num_classes=NUM_CLASSES)
 
-            print(f"[main] refit train_ann_file={train_ann_file}", flush=True)
-            print(f"[main] refit val_ann_file={val_ann_file}", flush=True)
-            t_fit = time.perf_counter()
-            if exp_setting == "SL": 
-                agent.fit(train_img_dir, train_ann_file)
-            else:
-                agent.fit(train_img_dir, train_ann_file, unlabel_ann_file) 
-            print(f"[main] refit done in {time.perf_counter() - t_fit:.2f}s", flush=True)
-         
-            t_nv = time.perf_counter()
-            acc = run_noisy_val(agent, val_img_dir, val_ann_file)
-            print(f"[main] run_noisy_val acc={acc} in {time.perf_counter() - t_nv:.2f}s", flush=True)
-            acc_lst.append(acc)
+                print(f"[main] refit train_ann_file={train_ann_file}", flush=True)
+                print(f"[main] refit val_ann_file={val_ann_file}", flush=True)
+                t_fit = time.perf_counter()
+                if exp_setting == "SL": 
+                    agent.fit(train_img_dir, train_ann_file)
+                else:
+                    agent.fit(train_img_dir, train_ann_file, unlabel_ann_file) 
+                print(f"[main] refit done in {time.perf_counter() - t_fit:.2f}s", flush=True)
+             
+                t_nv = time.perf_counter()
+                acc = run_noisy_val(agent, val_img_dir, val_ann_file)
+                print(f"[main] run_noisy_val acc={acc} in {time.perf_counter() - t_nv:.2f}s", flush=True)
+                acc_lst.append(acc)
+            except FileNotFoundError:
+                pass
 
-        eval_dict = {"fitness": np.mean(acc_lst)}
+        if not acc_lst:
+            print(
+                "WARNING: no noisy_val seed completed (missing files?); fitness set to nan.",
+                flush=True,
+            )
+            eval_dict = {"fitness": float("nan")}
+        else:
+            eval_dict = {"fitness": np.mean(acc_lst)}
         print("METRICS:", eval_dict)
 
     else: 

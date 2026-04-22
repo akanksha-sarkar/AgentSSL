@@ -155,6 +155,7 @@ def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_me
 
 if __name__ == "__main__":
 
+<<<<<<< Updated upstream:archive/clevr_count/aSSL_backbone/k10/seed0/evaluate.py
     # root_dir = os.environ.get("ROOT_DIR", "/work")
     # program_path = os.environ.get("PROGRAM_PATH", os.path.join(root_dir, "program.py"))
     # data_dir = os.environ.get("DATA_DIR", os.path.join("/data"))
@@ -162,6 +163,11 @@ if __name__ == "__main__":
     root_dir = "/home/eyl45/Sun/AgentSSL/clevr_count/aSSL_backbone/k10/seed0"
     data_dir = "/share/j_sun/agentSSL/clevr_count/data"
     program_path = os.path.join(root_dir, "program2.py")
+=======
+    root_dir = os.environ.get("ROOT_DIR", "/work")
+    program_path = os.environ.get("PROGRAM_PATH", os.path.join(root_dir, "program.py"))
+    data_dir = os.environ.get("DATA_DIR", os.path.join("/data"))
+>>>>>>> Stashed changes:resisc45/aSSL_backbone/k2/seed0/evaluate.py
     
     train_img_dir = os.path.join(data_dir, "images", "train")
     train_ann_file = os.path.join(root_dir, "annotations", "train", "train.json")

@@ -155,7 +155,7 @@ HYPERPARAMETERS = {
         {"method_name": "lora_1", "lora_bottleneck": 4},
         {"method_name": "adaptformer", "ft_mlp_module": "adapter", "ft_mlp_mode": "parallel", "ft_mlp_ln": "before", "adapter_init": "lora_kaiming", "adapter_bottleneck": 4, "adapter_scaler": 0.1},
     ],
-    "train_epochs": [50,100],
+    "train_epochs": [13, 50,100],
 }
 if __name__ == "__main__":
     import argparse
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
 
-    root_dir = f"/home/eyl45/Sun/AgentSSL/{dataset}/aSSL_backbone_{eval_method}/k{shot}/seed{seed}"
+    root_dir = f"/home/as2637/agentSSL/{dataset}/aSSL_backbone_{eval_method}/k{shot}/seed{seed}"
     data_dir = f"/share/j_sun/agentSSL/{dataset}/data"
     program_path = os.path.join("setup/warmstart/warm_start_program.py")
 
@@ -234,18 +234,27 @@ if __name__ == "__main__":
                     for n in range(4):
                         train_ann_file_partial = os.path.join(root_dir, "annotations", "val", f"seed{n}", "annotations",  "train", "train.json")
                         val_ann_file_partial = os.path.join(root_dir, "annotations", "val", f"seed{n}", "annotations", "noisy_val", "noisy_val.json")
-                        agent = program.ClassificationAgent(net_builder_fn=get_net_builder, 
-                                                            get_peft_config_fn=get_peft_config, 
-                                                            num_classes=NUM_CLASSES, 
-                                                            net_name=net_name, 
-                                                            peft_config=peft_config, 
-                                                            train_epochs=train_epochs)
-                        agent.fit(train_img_dir, train_ann_file_partial, unlabel_ann_file)
-                        val_dataset = ClassificationDataset(val_img_dir, val_ann_file_partial, transform=agent.transform)
-                        val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-                        acc = run_noisy_val(agent, val_img_dir, val_ann_file_partial)
-                        print(f"Noisy val accuracy: {acc}")
-                        acc_lst.append(acc)
+                        try:
+                            agent = program.ClassificationAgent(net_builder_fn=get_net_builder, 
+                                                                get_peft_config_fn=get_peft_config, 
+                                                                num_classes=NUM_CLASSES, 
+                                                                net_name=net_name, 
+                                                                peft_config=peft_config, 
+                                                                train_epochs=train_epochs)
+                            agent.fit(train_img_dir, train_ann_file_partial, unlabel_ann_file)
+                            val_dataset = ClassificationDataset(train_img_dir, val_ann_file_partial, transform=agent.transform)
+                            val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+                            acc = run_noisy_val(agent, train_img_dir, val_ann_file_partial)
+                            print(f"Noisy val accuracy: {acc}")
+                            acc_lst.append(acc)
+                        except FileNotFoundError:
+                            pass
+                    if not acc_lst:
+                        print(
+                            "WARNING: no noisy_val seed completed (missing files?); "
+                            "skipping this hyperparameter configuration."
+                        )
+                        continue
                     eval_dict = {"fitness": np.mean(acc_lst)}
                     print(f"Noisy val accuracy: {eval_dict['fitness']}")
                     
