@@ -23,5 +23,10 @@
         "num_classes": 45,
         "k1":"A benchmark dataset of aerial RGB images depicting diverse land-use and scene categories. It contains 45 classes (e.g., urban areas, transportation infrastructure, natural landscapes). Each image is 256x256 pixels and the dataset is balanced across classes. Your training dataset contains 1 images per class for a total of just 45 images. Your unlabeled dataset has 21960 datapoints. ",
         "k2":"A benchmark dataset of aerial RGB images depicting diverse land-use and scene categories. It contains 45 classes (e.g., urban areas, transportation infrastructure, natural landscapes). Each image is 256x256 pixels and the dataset is balanced across classes. Your training dataset contains 2 images per class for a total of just 90 images. Your unlabeled dataset has 21915 datapoints. "
+    },
+    "retino": {
+        "num_classes": 5, 
+        "k40":"None",
+        "k80":"None"
     }
 }
