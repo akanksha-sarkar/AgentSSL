@@ -187,7 +187,7 @@ if __name__ == "__main__":
     elif dataset == "sun397":
         NUM_CLASSES = 397
     elif dataset == "retino":
-        raise ValueError(f"Invalid dataset: {dataset}")
+        NUM_CLASSES = 5
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
 

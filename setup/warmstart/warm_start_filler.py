@@ -73,7 +73,7 @@ def build_program_from_best_result(
 
 
 if __name__ == "__main__":
-    for dataset in ["clevr_count"]:
+    for dataset in ["retino"]:
         if dataset == "clevr_count":
             num_classes = 8
         elif dataset == "dtd":
@@ -84,6 +84,8 @@ if __name__ == "__main__":
             num_classes = 4
         elif dataset == "sun397":
             num_classes = 397
+        elif dataset == "retino":
+            num_classes = 5
         else:
             raise ValueError(f"Invalid dataset: {dataset}")
         for results_json_path in Path(f"setup/warmstart/{dataset}").rglob(f"*.json"):    

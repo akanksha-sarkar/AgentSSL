@@ -46,6 +46,8 @@ def get_shots(dataset):
         return [5, 10]
     elif dataset == "sun397":
         return [3, 6]
+    elif dataset == "retino":
+        return [40, 80]
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
 
@@ -53,8 +55,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="Dry run")
     args = parser.parse_args()
-    datasets = ["clevr_count"]
-    eval_methods = ["noisy_val"]
+    datasets = ["retino"]
+    eval_methods = ["unsupervised"]
 
     launched = 0
     for dataset in datasets:
