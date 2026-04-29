@@ -1,0 +1,713 @@
+{
+  "images": [
+    {
+      "id": 38,
+      "file_name": "000038.jpg",
+      "width": 639,
+      "height": 426
+    },
+    {
+      "id": 52,
+      "file_name": "000052.jpg",
+      "width": 375,
+      "height": 338
+    },
+    {
+      "id": 69,
+      "file_name": "000069.jpg",
+      "width": 400,
+      "height": 300
+    },
+    {
+      "id": 87,
+      "file_name": "000087.jpg",
+      "width": 556,
+      "height": 304
+    },
+    {
+      "id": 97,
+      "file_name": "000097.jpg",
+      "width": 600,
+      "height": 449
+    },
+    {
+      "id": 178,
+      "file_name": "000178.jpg",
+      "width": 500,
+      "height": 500
+    },
+    {
+      "id": 199,
+      "file_name": "000199.jpg",
+      "width": 505,
+      "height": 568
+    },
+    {
+      "id": 208,
+      "file_name": "000208.jpg",
+      "width": 640,
+      "height": 559
+    },
+    {
+      "id": 259,
+      "file_name": "000259.jpg",
+      "width": 480,
+      "height": 640
+    },
+    {
+      "id": 291,
+      "file_name": "000291.jpg",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "id": 310,
+      "file_name": "000310.jpg",
+      "width": 362,
+      "height": 300
+    },
+    {
+      "id": 345,
+      "file_name": "000345.jpg",
+      "width": 600,
+      "height": 576
+    },
+    {
+      "id": 376,
+      "file_name": "000376.jpg",
+      "width": 561,
+      "height": 640
+    },
+    {
+      "id": 395,
+      "file_name": "000395.jpg",
+      "width": 635,
+      "height": 555
+    },
+    {
+      "id": 404,
+      "file_name": "000404.jpg",
+      "width": 335,
+      "height": 320
+    },
+    {
+      "id": 431,
+      "file_name": "000431.jpg",
+      "width": 400,
+      "height": 407
+    },
+    {
+      "id": 560,
+      "file_name": "000560.jpg",
+      "width": 480,
+      "height": 471
+    },
+    {
+      "id": 575,
+      "file_name": "000575.jpg",
+      "width": 400,
+      "height": 400
+    },
+    {
+      "id": 614,
+      "file_name": "000614.jpg",
+      "width": 480,
+      "height": 319
+    },
+    {
+      "id": 629,
+      "file_name": "000629.jpg",
+      "width": 600,
+      "height": 450
+    },
+    {
+      "id": 674,
+      "file_name": "000674.jpg",
+      "width": 639,
+      "height": 481
+    },
+    {
+      "id": 680,
+      "file_name": "000680.jpg",
+      "width": 429,
+      "height": 402
+    },
+    {
+      "id": 815,
+      "file_name": "000815.jpg",
+      "width": 400,
+      "height": 492
+    },
+    {
+      "id": 889,
+      "file_name": "000889.jpg",
+      "width": 315,
+      "height": 352
+    },
+    {
+      "id": 920,
+      "file_name": "000920.jpg",
+      "width": 468,
+      "height": 616
+    },
+    {
+      "id": 923,
+      "file_name": "000923.jpg",
+      "width": 640,
+      "height": 531
+    },
+    {
+      "id": 1065,
+      "file_name": "001065.jpg",
+      "width": 302,
+      "height": 441
+    },
+    {
+      "id": 1104,
+      "file_name": "001104.jpg",
+      "width": 520,
+      "height": 452
+    },
+    {
+      "id": 1121,
+      "file_name": "001121.jpg",
+      "width": 574,
+      "height": 537
+    },
+    {
+      "id": 1186,
+      "file_name": "001186.jpg",
+      "width": 640,
+      "height": 640
+    },
+    {
+      "id": 1236,
+      "file_name": "001236.jpg",
+      "width": 591,
+      "height": 559
+    },
+    {
+      "id": 1263,
+      "file_name": "001263.jpg",
+      "width": 640,
+      "height": 485
+    },
+    {
+      "id": 1304,
+      "file_name": "001304.jpg",
+      "width": 510,
+      "height": 339
+    },
+    {
+      "id": 1344,
+      "file_name": "001344.jpg",
+      "width": 560,
+      "height": 521
+    },
+    {
+      "id": 1365,
+      "file_name": "001365.jpg",
+      "width": 310,
+      "height": 325
+    },
+    {
+      "id": 1415,
+      "file_name": "001415.jpg",
+      "width": 368,
+      "height": 346
+    },
+    {
+      "id": 1439,
+      "file_name": "001439.jpg",
+      "width": 535,
+      "height": 512
+    },
+    {
+      "id": 1447,
+      "file_name": "001447.jpg",
+      "width": 640,
+      "height": 640
+    },
+    {
+      "id": 1488,
+      "file_name": "001488.jpg",
+      "width": 422,
+      "height": 456
+    },
+    {
+      "id": 1587,
+      "file_name": "001587.jpg",
+      "width": 400,
+      "height": 310
+    },
+    {
+      "id": 1617,
+      "file_name": "001617.jpg",
+      "width": 417,
+      "height": 323
+    },
+    {
+      "id": 1645,
+      "file_name": "001645.jpg",
+      "width": 640,
+      "height": 587
+    },
+    {
+      "id": 1698,
+      "file_name": "001698.jpg",
+      "width": 400,
+      "height": 300
+    },
+    {
+      "id": 1711,
+      "file_name": "001711.jpg",
+      "width": 607,
+      "height": 640
+    },
+    {
+      "id": 1810,
+      "file_name": "001810.jpg",
+      "width": 523,
+      "height": 501
+    },
+    {
+      "id": 1839,
+      "file_name": "001839.jpg",
+      "width": 342,
+      "height": 320
+    },
+    {
+      "id": 1876,
+      "file_name": "001876.jpg",
+      "width": 562,
+      "height": 613
+    }
+  ],
+  "annotations": [
+    {
+      "id": 38,
+      "image_id": 38,
+      "category_id": 3
+    },
+    {
+      "id": 52,
+      "image_id": 52,
+      "category_id": 2
+    },
+    {
+      "id": 69,
+      "image_id": 69,
+      "category_id": 35
+    },
+    {
+      "id": 87,
+      "image_id": 87,
+      "category_id": 40
+    },
+    {
+      "id": 97,
+      "image_id": 97,
+      "category_id": 39
+    },
+    {
+      "id": 178,
+      "image_id": 178,
+      "category_id": 47
+    },
+    {
+      "id": 199,
+      "image_id": 199,
+      "category_id": 38
+    },
+    {
+      "id": 208,
+      "image_id": 208,
+      "category_id": 44
+    },
+    {
+      "id": 259,
+      "image_id": 259,
+      "category_id": 26
+    },
+    {
+      "id": 291,
+      "image_id": 291,
+      "category_id": 33
+    },
+    {
+      "id": 310,
+      "image_id": 310,
+      "category_id": 18
+    },
+    {
+      "id": 345,
+      "image_id": 345,
+      "category_id": 37
+    },
+    {
+      "id": 376,
+      "image_id": 376,
+      "category_id": 43
+    },
+    {
+      "id": 395,
+      "image_id": 395,
+      "category_id": 11
+    },
+    {
+      "id": 404,
+      "image_id": 404,
+      "category_id": 30
+    },
+    {
+      "id": 431,
+      "image_id": 431,
+      "category_id": 6
+    },
+    {
+      "id": 560,
+      "image_id": 560,
+      "category_id": 13
+    },
+    {
+      "id": 575,
+      "image_id": 575,
+      "category_id": 42
+    },
+    {
+      "id": 614,
+      "image_id": 614,
+      "category_id": 7
+    },
+    {
+      "id": 629,
+      "image_id": 629,
+      "category_id": 1
+    },
+    {
+      "id": 674,
+      "image_id": 674,
+      "category_id": 15
+    },
+    {
+      "id": 680,
+      "image_id": 680,
+      "category_id": 27
+    },
+    {
+      "id": 815,
+      "image_id": 815,
+      "category_id": 41
+    },
+    {
+      "id": 889,
+      "image_id": 889,
+      "category_id": 5
+    },
+    {
+      "id": 920,
+      "image_id": 920,
+      "category_id": 16
+    },
+    {
+      "id": 923,
+      "image_id": 923,
+      "category_id": 28
+    },
+    {
+      "id": 1065,
+      "image_id": 1065,
+      "category_id": 25
+    },
+    {
+      "id": 1104,
+      "image_id": 1104,
+      "category_id": 23
+    },
+    {
+      "id": 1121,
+      "image_id": 1121,
+      "category_id": 9
+    },
+    {
+      "id": 1186,
+      "image_id": 1186,
+      "category_id": 22
+    },
+    {
+      "id": 1236,
+      "image_id": 1236,
+      "category_id": 14
+    },
+    {
+      "id": 1263,
+      "image_id": 1263,
+      "category_id": 24
+    },
+    {
+      "id": 1304,
+      "image_id": 1304,
+      "category_id": 32
+    },
+    {
+      "id": 1344,
+      "image_id": 1344,
+      "category_id": 12
+    },
+    {
+      "id": 1365,
+      "image_id": 1365,
+      "category_id": 20
+    },
+    {
+      "id": 1415,
+      "image_id": 1415,
+      "category_id": 17
+    },
+    {
+      "id": 1439,
+      "image_id": 1439,
+      "category_id": 8
+    },
+    {
+      "id": 1447,
+      "image_id": 1447,
+      "category_id": 36
+    },
+    {
+      "id": 1488,
+      "image_id": 1488,
+      "category_id": 31
+    },
+    {
+      "id": 1587,
+      "image_id": 1587,
+      "category_id": 29
+    },
+    {
+      "id": 1617,
+      "image_id": 1617,
+      "category_id": 19
+    },
+    {
+      "id": 1645,
+      "image_id": 1645,
+      "category_id": 4
+    },
+    {
+      "id": 1698,
+      "image_id": 1698,
+      "category_id": 45
+    },
+    {
+      "id": 1711,
+      "image_id": 1711,
+      "category_id": 10
+    },
+    {
+      "id": 1810,
+      "image_id": 1810,
+      "category_id": 21
+    },
+    {
+      "id": 1839,
+      "image_id": 1839,
+      "category_id": 34
+    },
+    {
+      "id": 1876,
+      "image_id": 1876,
+      "category_id": 46
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "banded"
+    },
+    {
+      "id": 2,
+      "name": "blotchy"
+    },
+    {
+      "id": 3,
+      "name": "braided"
+    },
+    {
+      "id": 4,
+      "name": "bubbly"
+    },
+    {
+      "id": 5,
+      "name": "bumpy"
+    },
+    {
+      "id": 6,
+      "name": "chequered"
+    },
+    {
+      "id": 7,
+      "name": "cobwebbed"
+    },
+    {
+      "id": 8,
+      "name": "cracked"
+    },
+    {
+      "id": 9,
+      "name": "crosshatched"
+    },
+    {
+      "id": 10,
+      "name": "crystalline"
+    },
+    {
+      "id": 11,
+      "name": "dotted"
+    },
+    {
+      "id": 12,
+      "name": "fibrous"
+    },
+    {
+      "id": 13,
+      "name": "flecked"
+    },
+    {
+      "id": 14,
+      "name": "freckled"
+    },
+    {
+      "id": 15,
+      "name": "frilly"
+    },
+    {
+      "id": 16,
+      "name": "gauzy"
+    },
+    {
+      "id": 17,
+      "name": "grid"
+    },
+    {
+      "id": 18,
+      "name": "grooved"
+    },
+    {
+      "id": 19,
+      "name": "honeycombed"
+    },
+    {
+      "id": 20,
+      "name": "interlaced"
+    },
+    {
+      "id": 21,
+      "name": "knitted"
+    },
+    {
+      "id": 22,
+      "name": "lacelike"
+    },
+    {
+      "id": 23,
+      "name": "lined"
+    },
+    {
+      "id": 24,
+      "name": "marbled"
+    },
+    {
+      "id": 25,
+      "name": "matted"
+    },
+    {
+      "id": 26,
+      "name": "meshed"
+    },
+    {
+      "id": 27,
+      "name": "paisley"
+    },
+    {
+      "id": 28,
+      "name": "perforated"
+    },
+    {
+      "id": 29,
+      "name": "pitted"
+    },
+    {
+      "id": 30,
+      "name": "pleated"
+    },
+    {
+      "id": 31,
+      "name": "polka-dotted"
+    },
+    {
+      "id": 32,
+      "name": "porous"
+    },
+    {
+      "id": 33,
+      "name": "potholed"
+    },
+    {
+      "id": 34,
+      "name": "scaly"
+    },
+    {
+      "id": 35,
+      "name": "smeared"
+    },
+    {
+      "id": 36,
+      "name": "spiralled"
+    },
+    {
+      "id": 37,
+      "name": "sprinkled"
+    },
+    {
+      "id": 38,
+      "name": "stained"
+    },
+    {
+      "id": 39,
+      "name": "stratified"
+    },
+    {
+      "id": 40,
+      "name": "striped"
+    },
+    {
+      "id": 41,
+      "name": "studded"
+    },
+    {
+      "id": 42,
+      "name": "swirly"
+    },
+    {
+      "id": 43,
+      "name": "veined"
+    },
+    {
+      "id": 44,
+      "name": "waffled"
+    },
+    {
+      "id": 45,
+      "name": "woven"
+    },
+    {
+      "id": 46,
+      "name": "wrinkled"
+    },
+    {
+      "id": 47,
+      "name": "zigzagged"
+    }
+  ]
+}

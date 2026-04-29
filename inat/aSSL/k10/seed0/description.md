@@ -4,67 +4,21 @@
 
 You are an AI agent tasked with implementing a **classification program** for an image dataset. Your goal is to train (or otherwise derive) a classifier using the provided training dataset and produce **predicted labels for every image in the validation dataset**.
 
-You have access to a very small training set, a validation set and a set of unlabelled datapoints. Your output will be evaluated using a standardized evaluation script which will return a set of unsupervised proxy metrics (ami, ari, v_measure, fmi, silhouette) as the feedback, but note that the priority is test set performance. At the end of the evolution, the final program will be evaluated on the validation set.
+You have access to a small training set, a validation set and a set of unlabelled datapoints. Your output will be evaluated using a standardized evaluation script which will return a validation metric as the feedback, but note that the priority is test set performance. 
 
 ### Dataset specification
+This challenge focused on semi-supervised fine-grained classification where we provide labeled data of the target classes and unlabeled data from both target and non-target classes. The data is obtained from iNaturalist, a community driven project aimed at collecting observations of biodiversity. 
 
-None
+All the images are stored in JPEG format and have a maximum dimension of 300px. 
 
-### Model Interface
+The training set consists of:
+- **Labeled data**: **810** fine-grained species. Every image in this file is paired with a `category_id`. Each **category** entry includes full taxonomy, including **kingdom** and **phylum** (and finer ranks: class, order, family, genus, species). This is the taxonomic information available *from the annotation file* for the labeled set.
+- **Unlabeled data**: a large COCO `images` list. In this repository each record has **`id` and `file_name` only**; there are **no** per-image kingdom, phylum, species, or in-class / out-of-class fields in the JSON, and the dataloader only exposes `file_name` and `image_id` for unlabeled images. 
 
-You MUST use the provided model builder.
+### Guidelines 
 
-#### Step-by-step usage
+You are allowed to use the labeled and unlabeled images in the training set in any way they like. You are not allowed to use images, labels, or pre-trained models from previous iNaturalist competitions (including iNat-17, iNat-18, iNat-19, iNat-21, and Semi-Aves) or any other datasets. However, you are allowed to use ImageNet-1k (not 21k) pre-trained model (e.g., pre-trained models from torchvision). If you cannot verify the training set of a model, we strongly urge you to not use them because of the potential overlap of class labels. The general rule is that participants should only use the provided images and annotations (except for the ImageNet-1k pre-trained models) to train a model.
 
-1. Choose backbone:
-    net_name ∈ {
-        "timm/vit_base_patch16_clip_224.openai",   # CLIP
-        "timm/vit_base_patch14_reg4_dinov2.lvd142m" # DINOv2
-    }
-
-
-2. Create PEFT config:
-    peft_config = get_peft_config_fn({...})
-
-PEFT options:
-Using Lora: { "method_name": "lora_1", "lora_bottleneck": 4 or 16 or .. }
-Using Adaptformer: {
-                    "method_name": "adaptformer", 
-                    "ft_mlp_module": "adapter",
-                    "ft_mlp_mode": "parallel",
-                    "ft_mlp_ln": "before",
-                    "adapter_init": "lora_kaiming",
-                    "adapter_bottleneck": 4 or 16,
-                    "adapter_scaler": 0.1
-                    }
-Frozen Backbone: {"freeze_backbone": True} (default is False)
-
-3. Set vit_config: 
-    vit_config = {"drop_path_rate": 0 or 0.2}
-4. Build model class:
-    net_builder = net_builder_fn(net_name, peft_config, vit_config)
-
-IMPORTANT: net_builder is a CLASS, not an instance.
-
-5. Instantiate:
-    self.model = net_builder(
-        num_classes=num_classes,
-        pretrained=True,
-        pretrained_path=""
-    ).to(device)
-
-### Model Behavior (IMPORTANT)
-
-The model is a ViT wrapper with the following behavior:
-
-- `out = model(x)` returns:
-    - `out["feat"]`: pooled feature vector of shape (B, 768)
-    - `out["logits"]`: classification logits of shape (B, num_classes)
-
-Notes:
-- `feat` is already pooled (no need for CLS token extraction or pooling)
-- `logits` are raw (no softmax applied)
-- **IMPORTANT:** After instantiation, use trainable = [p for p in self.model.parameters() if p.requires_grad] to identify optimizable parameters. The model builder sets gradient flags to indicate what should be trained.
 
 ## Program Interface (Required)
 
@@ -73,7 +27,7 @@ You must implement the following class in your program:
 ```python
 
 class ClassificationAgent:
-    def __init__(self, net_builder_fn, get_peft_config_fn, num_classes):
+    def __init__(self, num_classes):
         self.transform = pass # class must include self.transform
         self.model = pass # The model you predict with.
     def fit(self, img_dir, train_ann_file, unlabel_ann_file):
@@ -136,7 +90,7 @@ The program you write will be used in the following way:
     program = load_program(program_path)
 
     print("Loaded program...")
-    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config=get_peft_config, num_classes=num_classes)
+    agent = program.ClassificationAgent(num_classes=num_classes)
     print("Created agent...")
     agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
     ...

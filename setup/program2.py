@@ -539,7 +539,7 @@ class ClassificationAgent:
 
         optimizer = torch.optim.AdamW(trainable, lr=3e-4, weight_decay=0.05)
 
-        num_epochs = 10
+        num_epochs = 2
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, T_max=num_epochs, eta_min=1e-6
         )

@@ -143,7 +143,7 @@ def calculate_fitness(eval_dict, scores_to_use):
     eval_dict["fitness"] = fitness
     return eval_dict
 
-def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']):
+def _eval(model, loader, sup_metric=True, scores=['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'dbi', 'chi', 'bnm', 'snd']):
     #model.eval()
     acc = 0.0
     dset_len = len(loader.dataset)
@@ -193,9 +193,10 @@ def _eval(model, loader, sup_metric=False, scores=['rankme', 'ami', 'ari', 'v_me
     assert n_processed == dset_len, f"n_processed: {n_processed}, dset_len: {dset_len}"
     
     # Lazy import: pulls sklearn + pytorch_adapt validators (heavy; can segfault if threaded BLAS misconfigured).
-    from metrics.metrics import unsupervised_scores
+    #from metrics.metrics import unsupervised_scores
 
-    eval_dict = unsupervised_scores(y_feats, y_logits, y_probs, scores)
+    #eval_dict = unsupervised_scores(y_feats, y_logits, y_probs, scores)
+    eval_dict = {}
     if sup_metric:
         eval_dict["acc"] = acc
     return eval_dict, y_feats, y_logits, y_pred, y_probs, y_labels
@@ -213,9 +214,7 @@ if __name__ == "__main__":
     val_ann_file = os.path.join(data_dir, "annotations", "val", "val.json")
 
     program = load_program(program_path)
-    from nets.net_builder import get_net_builder
-    from nets.peft import get_peft_config
-    agent = program.ClassificationAgent(net_builder_fn=get_net_builder, get_peft_config_fn=get_peft_config, num_classes=NUM_CLASSES)
+    agent = program.ClassificationAgent(num_classes=NUM_CLASSES)
 
     agent.fit(train_img_dir, train_ann_file, unlabel_ann_file)
 
@@ -226,6 +225,7 @@ if __name__ == "__main__":
     scores_to_use = ['rankme', 'ami', 'ari', 'v_measure', 'fmi', 'silhouette', 'bnm', 'snd']
 
     eval_dict, _, _, _, _, _ = _eval(agent, val_loader, scores=scores_to_use)
-    eval_dict = calculate_fitness(eval_dict, scores_to_use)
+    #eval_dict = calculate_fitness(eval_dict, scores_to_use)
+    eval_dict["fitness"] = eval_dict["acc"]
 
     print("METRICS:", eval_dict)
