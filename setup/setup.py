@@ -13,8 +13,7 @@ Annotations source:
   setup/datasets/{setup_subdir}/{split}/{seed}/annotations/
 
 Example:
-  python setup/setup.py --dataset dtd --setting aSSL_backbone_1804 --split k3 --seed 0 \\
-    --metric unsupervised_metric --learning SSL
+  python setup/setup.py --dataset retino --setting aSSL_noisy_val --split k80 --seed 42 --metric noisy_val --learning SSL
 
 Creates:
   .../seed0/annotations/   (copy)
