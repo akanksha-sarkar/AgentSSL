@@ -4,3 +4,8 @@ __pycache__/
 resisc45/agentSL
 pretrain_weight/
 logs
+setup_detection
+eval_detection
+baselines
+runs
+wildfin
