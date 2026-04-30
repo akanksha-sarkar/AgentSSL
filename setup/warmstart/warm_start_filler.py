@@ -62,7 +62,7 @@ def build_program_from_best_result(
         train_epochs=best["train_epochs"],
         num_classes=num_classes,
         peft_config=best["peft_config"],
-        fitness=round(best["fitness"], 4),
+        fitness=round(best[score_key], 4),
     )
 
     Path(output_py_path).write_text(rendered)
@@ -73,7 +73,8 @@ def build_program_from_best_result(
 
 
 if __name__ == "__main__":
-    for dataset in ["retino"]:
+    for dataset in ["retino", "kitti", "resisc45", "sun397"]:
+        print(f"Building program for {dataset}")
         if dataset == "clevr_count":
             num_classes = 8
         elif dataset == "dtd":
@@ -88,11 +89,12 @@ if __name__ == "__main__":
             num_classes = 5
         else:
             raise ValueError(f"Invalid dataset: {dataset}")
-        for results_json_path in Path(f"setup/warmstart/{dataset}").rglob(f"*.json"):    
+        for results_json_path in Path(f"setup/warmstart/{dataset}/noisy_val").rglob(f"*.json"):
+            print(results_json_path)
             build_program_from_best_result(
                 results_json_path=str(results_json_path),
                 template_py_path="setup/warmstart/warm_start_template.py",
                 output_py_path=str(results_json_path.parent / "warm_start_program.py"),
                 num_classes=num_classes,
-                score_key="fitness",
+                score_key="acc",
             )
