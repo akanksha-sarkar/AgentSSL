@@ -73,28 +73,39 @@ def build_program_from_best_result(
 
 
 if __name__ == "__main__":
-    for dataset in ["retino", "kitti", "resisc45", "sun397"]:
+    # for dataset in ["retino", "kitti", "resisc45", "sun397"]:
+    #     print(f"Building program for {dataset}")
+    #     if dataset == "clevr_count":
+    #         num_classes = 8
+    #     elif dataset == "dtd":
+    #         num_classes = 47
+    #     elif dataset == "resisc45":
+    #         num_classes = 45
+    #     elif dataset == "kitti":
+    #         num_classes = 4
+    #     elif dataset == "sun397":
+    #         num_classes = 397
+    #     elif dataset == "retino":
+    #         num_classes = 5
+    #     else:
+    #         raise ValueError(f"Invalid dataset: {dataset}")
+    #     for results_json_path in Path(f"setup/warmstart/{dataset}/noisy_val").rglob(f"*.json"):
+    #         print(results_json_path)
+    #         build_program_from_best_result(
+    #             results_json_path=str(results_json_path),
+    #             template_py_path="setup/warmstart/warm_start_template.py",
+    #             output_py_path=str(results_json_path.parent / "warm_start_program.py"),
+    #             num_classes=num_classes,
+    #             score_key="acc",
+    #         )
+    for dataset in ["resisc45"]:
         print(f"Building program for {dataset}")
-        if dataset == "clevr_count":
-            num_classes = 8
-        elif dataset == "dtd":
-            num_classes = 47
-        elif dataset == "resisc45":
-            num_classes = 45
-        elif dataset == "kitti":
-            num_classes = 4
-        elif dataset == "sun397":
-            num_classes = 397
-        elif dataset == "retino":
-            num_classes = 5
-        else:
-            raise ValueError(f"Invalid dataset: {dataset}")
-        for results_json_path in Path(f"setup/warmstart/{dataset}/noisy_val").rglob(f"*.json"):
+        for results_json_path in [Path("setup/warmstart/resisc45/noisy_val/k1/results.json")]:
             print(results_json_path)
             build_program_from_best_result(
                 results_json_path=str(results_json_path),
                 template_py_path="setup/warmstart/warm_start_template.py",
                 output_py_path=str(results_json_path.parent / "warm_start_program.py"),
-                num_classes=num_classes,
+                num_classes=45,
                 score_key="acc",
             )
