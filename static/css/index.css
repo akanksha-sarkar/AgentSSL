@@ -305,3 +305,10 @@ body.no-scroll { overflow: hidden; }
   html { scroll-behavior: auto; }
   .hm-cell, .reveal { transition: none; }
 }
+
+/* Keep the title and TL;DR on one line on wide screens; let them wrap on smaller ones. */
+.publication-title { font-size: clamp(2rem, 3.3vw, 3rem) !important; }
+.callout.tldr { width: fit-content; max-width: 100%; margin-left: auto; margin-right: auto; }
+@media screen and (min-width: 1150px) {
+  .publication-title, .callout.tldr { white-space: nowrap; }
+}
