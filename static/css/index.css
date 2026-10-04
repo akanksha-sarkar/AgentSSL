@@ -1,0 +1,164 @@
+/* AgentSSL project page — Nerfies layout, recoloured to match the AgentSSL poster. */
+:root {
+  --lavender: #D1DAF9;
+  --lavender-soft: #EEF1FD;
+  --cream: #FFF9D4;
+  --purple: #846DA3;
+  --purple-dark: #5B477D;
+  --gold: #A18600;
+  --ink: #1A1A1A;
+  --plus: #0B7A3B;
+  --minus: #B22222;
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans', sans-serif;
+  color: var(--ink);
+}
+
+a { color: var(--purple); }
+a:hover { color: var(--purple-dark); }
+
+.title, .subtitle { color: var(--ink); }
+
+.footer {
+  background: var(--lavender-soft);
+}
+
+.footer .icon-link {
+  font-size: 25px;
+  color: var(--purple-dark);
+}
+
+.link-block a {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+/* Buttons: deep purple instead of Bulma's near-black. */
+.publication-links .button.is-dark {
+  background-color: var(--purple-dark);
+}
+.publication-links .button.is-dark:hover {
+  background-color: var(--purple);
+}
+.publication-links .button[aria-disabled="true"] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.publication-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.publication-authors {
+  font-family: 'Inter', sans-serif;
+}
+
+.publication-authors a {
+  color: var(--purple) !important;
+}
+
+.publication-authors a:hover {
+  text-decoration: underline;
+}
+
+.author-block {
+  display: inline-block;
+}
+
+.equal-contrib {
+  color: #555;
+}
+
+/* TL;DR banner — mirrors the cream key-message bar on the poster. */
+.tldr {
+  background: var(--cream);
+  border-radius: 24px;
+  padding: 1.1rem 1.5rem;
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  font-size: 1.1rem;
+}
+.tldr .icon {
+  color: var(--gold);
+  font-size: 1.4rem;
+  margin-top: 0.1rem;
+}
+
+/* Section headers — lavender pill like the poster's figure headers. */
+.section-pill {
+  display: inline-block;
+  background: var(--lavender);
+  border-radius: 999px;
+  padding: 0.35rem 1.4rem;
+  margin-bottom: 1.25rem !important;
+}
+
+.figure-card {
+  background: #fff;
+  border: 3px solid var(--lavender);
+  border-radius: 20px;
+  padding: 1rem;
+}
+.figure-card img {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+}
+
+.caption {
+  font-size: 0.95rem;
+  color: #444;
+  margin-top: 0.75rem;
+}
+
+.findings li { margin-bottom: 0.4rem; }
+
+/* Results table */
+.results-wrap {
+  overflow-x: auto;
+  border: 3px solid var(--lavender);
+  border-radius: 20px;
+}
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.results-table th, .results-table td {
+  padding: 0.45rem 0.6rem;
+  text-align: center;
+}
+.results-table thead tr:first-child th { background: var(--lavender); }
+.results-table thead tr:last-child th {
+  background: var(--lavender-soft);
+  font-weight: 400;
+  color: #555;
+  border-bottom: 2px solid var(--ink);
+}
+.results-table thead tr:last-child th:first-child { font-weight: 600; color: var(--ink); }
+.results-table td:first-child, .results-table th:first-child {
+  text-align: left;
+  padding-left: 1rem;
+}
+.results-table .grp { border-left: 2px solid #ddd; }
+.results-table tbody tr { border-bottom: 1px solid #eee; }
+.results-table tr.agent { background: var(--cream); }
+.results-table tr.agent td:first-child { font-weight: 600; }
+.results-table tr.delta { background: #f1f1f1; font-weight: 700; }
+.results-table .h { color: var(--purple); font-weight: 700; }
+.results-table .a { color: var(--gold); font-weight: 700; }
+.results-table .plus { color: var(--plus); }
+.results-table .minus { color: var(--minus); }
+.results-table sub, .results-table sup { font-weight: 400; color: #555; }
+
+pre {
+  background: var(--lavender-soft);
+  border-radius: 12px;
+}

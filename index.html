@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="AgentSSL: we frame semi-supervised learning as a program search problem and study whether MLE agents can leverage unlabeled data.">
+  <meta name="keywords" content="AgentSSL, semi-supervised learning, MLE agents, program search, LLM agents">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgentSSL: Can MLE Agents Leverage Unlabeled Data?</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.svg">
+
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">AgentSSL: Can MLE Agents Leverage Unlabeled Data?</h1>
+          <!-- TODO: add each author's homepage link and affiliation superscripts. -->
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">Ethan Lin<sup>*</sup>,</span>
+            <span class="author-block">Akanksha Sarkar<sup>*</sup>,</span>
+            <span class="author-block">Ziang Liu,</span>
+            <span class="author-block">Kristin Branson,</span>
+            <span class="author-block">Jennifer Sun</span>
+          </div>
+
+          <!-- TODO: affiliations, e.g. <span class="author-block"><sup>1</sup>University</span> -->
+          <div class="is-size-6 publication-authors equal-contrib">
+            <span class="author-block"><sup>*</sup>Equal contribution</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- TODO: replace href="#" and remove aria-disabled once the paper is public. -->
+              <span class="link-block">
+                <a href="#" aria-disabled="true"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                  <span>Paper (soon)</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="#" aria-disabled="true"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="ai ai-arxiv"></i></span>
+                  <span>arXiv (soon)</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://github.com/akanksha-sarkar/AgentSSL"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fab fa-github"></i></span>
+                  <span>Code</span>
+                </a>
+              </span>
+            </div>
+          </div>
+
+          <div class="tldr has-text-left">
+            <span class="icon"><i class="fas fa-lightbulb"></i></span>
+            <span><strong>TL;DR</strong> MLE agents can discover strong programs that leverage unlabeled data,
+              but reliable program selection remains the bottleneck.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section pt-0">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered is-vcentered">
+      <div class="column is-5">
+        <div class="figure-card">
+          <img src="./static/images/Figure_1.png"
+               alt="Bar chart comparing human engineering cost and data annotation cost for MLE agents, semi-supervised learning, and AgentSSL">
+        </div>
+      </div>
+      <div class="column is-7">
+        <h2 class="title is-4">Can agents reduce <span style="color:#846DA3">engineering</span> and
+          <span style="color:#A18600">annotation</span> cost at the same time?</h2>
+        <p>
+          MLE agent research is focused on reducing engineering cost, but relies on human-labeled data.
+          Semi-supervised learning (SSL) research seeks to reduce annotation effort, but requires human
+          engineering to deploy. We study whether <strong>AgentSSL</strong> can reduce both costs.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3 section-pill">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Acquiring high-quality labeled data and engineering effective learning pipelines are two critical
+            bottlenecks to applying machine learning systems in new domains. Although recent MLE agents have shown
+            promise in automating pipeline design, their behavior has been studied almost exclusively in fully
+            supervised settings. In many domains, however, labeled data is expensive while unlabeled data is abundant.
+          </p>
+          <p>
+            In this work, we study agents in the semi-supervised learning (SSL) regime by framing SSL as a program
+            search problem and exploring how agents navigate this space under limited supervision. Our analysis
+            focuses on three questions: (1) whether agents can effectively leverage unlabeled data, (2) how they
+            leverage it and what strategies they discover, and (3) whether they can adapt these strategies to specific
+            domains.
+          </p>
+          <p>
+            We find that agents can leverage and synthesize SSL strategies spanning decades of SSL research, achieving
+            performance comparable to, and in some cases outperforming, established human-engineered SSL methods. We
+            further validate these observations on real-world ecological datasets, highlighting both the challenges
+            and opportunities of transferring agent-discovered strategies beyond controlled benchmarks.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="has-text-centered">
+      <h2 class="title is-3 section-pill">Method</h2>
+    </div>
+    <p class="has-text-centered mb-4">We frame SSL as a program search problem using LLM-based agents.</p>
+    <div class="figure-card">
+      <img src="./static/images/agent_main_figure.png"
+           alt="Overview of AgentSSL: inputs, Phase I program generation with an agent loop and evaluator, candidate programs, and Phase II program selection">
+    </div>
+    <p class="caption">
+      <strong>Overview of AgentSSL.</strong> Given a small labeled set and a larger unlabeled corpus, an LLM-based
+      agent generates SSL programs that are evaluated using either unsupervised SSL metrics or noisy validation
+      feedback, with the resulting fitness score guiding iterative refinement. We evaluate AgentSSL on both image
+      classification SSL benchmarks and real-world ecological detection tasks.
+    </p>
+
+    <div class="content mt-5">
+      <h3 class="title is-5">Contributions</h3>
+      <ul class="findings">
+        <li>We introduce <strong>Agentic Semi-Supervised Learning</strong> (AgentSSL), formulating SSL as a structured program-search task for agents.</li>
+        <li>MLE agents autonomously discover strong SSL programs, competitive with and in several cases <strong>outperforming</strong> established SSL baselines.</li>
+        <li>A systematic analysis shows agents exploit unlabeled data, explore ideas across classical and modern SSL, and produce diverse, performant solutions.</li>
+        <li>We identify <strong>reliable program selection</strong> as an open problem, with an empirical analysis of existing proxy metrics.</li>
+        <li>We evaluate AgentSSL on real-world ecology detection tasks, showing both the potential and the challenges of reducing annotation cost in practice.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="has-text-centered">
+      <h2 class="title is-3 section-pill">Results</h2>
+    </div>
+    <p class="mb-4">
+      Across datasets and shot settings, AgentSSL discovers programs that are competitive with strong SSL baselines.
+      The best agent solution (<span style="color:#A18600;font-weight:700">A<sub>best</sub></span>) is generally
+      comparable to the best human-engineered SSL baseline
+      (<span style="color:#846DA3;font-weight:700">H<sub>best</sub></span>) and outperforms it on several datasets.
+    </p>
+    <div class="results-wrap">
+      <table class="results-table">
+        <thead>
+          <tr><th></th><th colspan="2" class="grp">DTD</th><th colspan="2" class="grp">SUN397</th><th colspan="2" class="grp">RESISC45</th><th colspan="2" class="grp">RETINO</th><th colspan="2" class="grp">CLEVR</th><th colspan="2" class="grp">KITTI</th></tr>
+          <tr><th>Method</th><th class="grp">3</th><th>6</th><th class="grp">3</th><th>6</th><th class="grp">1</th><th>2</th><th class="grp">40</th><th>80</th><th class="grp">10</th><th>20</th><th class="grp">5</th><th>10</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Supervised</td><td class="grp">58.35</td><td>66.68</td><td class="grp">62.06</td><td>68.74</td><td class="grp">56.08</td><td>71.11</td><td class="h grp">53.86</td><td class="h">57.64</td><td class="grp">40.30</td><td>48.24</td><td class="h grp">45.05</td><td class="h">47.07</td></tr>
+          <tr><td>FixMatch</td><td class="grp">58.16</td><td>67.09</td><td class="grp">56.72</td><td>64.22</td><td class="grp">62.13</td><td>81.61</td><td class="grp">38.72</td><td>41.66</td><td class="grp">38.93</td><td>56.32</td><td class="grp">39.76</td><td>43.09</td></tr>
+          <tr><td>SoftMatch</td><td class="grp">62.59</td><td>69.17</td><td class="h grp">69.63</td><td class="h">73.18</td><td class="h grp">73.83</td><td class="h">86.54</td><td class="grp">45.95</td><td>54.83</td><td class="h grp">46.48</td><td class="h">67.83</td><td class="grp">37.79</td><td>43.04</td></tr>
+          <tr><td>PET</td><td class="grp">60.64</td><td>67.92</td><td class="grp">63.63</td><td>68.19</td><td class="grp">64.16</td><td>77.88</td><td class="grp">26.47</td><td>37.97</td><td class="grp">33.34</td><td>34.31</td><td class="grp">39.01</td><td>42.99</td></tr>
+          <tr><td>V-PET</td><td class="h grp">64.84</td><td class="h">70.25</td><td class="grp">66.58</td><td>71.70</td><td class="grp">62.99</td><td>77.16</td><td class="grp">20.45</td><td>29.60</td><td class="grp">32.57</td><td>33.60</td><td class="grp">39.66</td><td>37.04</td></tr>
+          <tr class="agent"><td>AgentSSL<sub>avg</sub><sup>U</sup></td><td class="grp">65.44</td><td>72.32</td><td class="grp">67.09</td><td>70.86</td><td class="grp">71.53</td><td>78.10</td><td class="grp">40.98</td><td>63.59</td><td class="grp">35.58</td><td>43.68</td><td class="a grp">47.35</td><td>47.40</td></tr>
+          <tr class="agent"><td>AgentSSL<sub>avg</sub><sup>N</sup></td><td class="grp">65.57</td><td>71.45</td><td class="grp">66.26</td><td>70.59</td><td class="grp">–</td><td>76.06</td><td class="a grp">56.62</td><td>58.79</td><td class="grp">42.36</td><td>42.65</td><td class="grp">42.71</td><td>45.85</td></tr>
+          <tr class="agent"><td>AgentSSL<sub>max</sub><sup>U</sup></td><td class="a grp">68.44</td><td class="a">73.79</td><td class="grp">68.57</td><td class="a">72.78</td><td class="a grp">76.20</td><td class="a">80.94</td><td class="grp">41.54</td><td>55.02</td><td class="grp">44.04</td><td>45.87</td><td class="grp">40.09</td><td class="a">47.53</td></tr>
+          <tr class="agent"><td>AgentSSL<sub>max</sub><sup>N</sup></td><td class="grp">64.71</td><td>72.10</td><td class="a grp">69.12</td><td>71.15</td><td class="grp">–</td><td>76.90</td><td class="grp">36.97</td><td class="a">73.47</td><td class="a grp">48.99</td><td class="a">53.36</td><td class="grp">39.19</td><td>42.84</td></tr>
+          <tr class="delta"><td><span class="a">A<sub>best</sub></span> − <span class="h">H<sub>best</sub></span></td><td class="plus grp">+3.60</td><td class="plus">+3.54</td><td class="minus grp">−0.51</td><td class="minus">−0.40</td><td class="plus grp">+3.37</td><td class="minus">−5.60</td><td class="plus grp">+2.76</td><td class="plus">+15.83</td><td class="plus grp">+2.51</td><td class="minus">−14.47</td><td class="plus grp">+2.30</td><td class="plus">+0.46</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">
+      Few-shot accuracy (oracle test-set selection) across datasets and labels per class. Best human-engineered SSL
+      baseline per column in <span class="h" style="color:#846DA3;font-weight:700">purple</span>, best agent result in
+      <span style="color:#A18600;font-weight:700">gold</span>. <sup>U</sup>: unsupervised-metric feedback;
+      <sup>N</sup>: noisy-validation feedback; <sub>avg</sub>/<sub>max</sub>: mean / best over runs.
+    </p>
+    <div class="tldr mt-5">
+      <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
+      <span>The gap between oracle and practical selection is the central challenge: when unsupervised selection
+        metrics correlate well with test accuracy, AgentSSL keeps much of its performance; when they don't, it drops
+        substantially. The bottleneck is not <em>generating</em> good SSL programs, but <em>selecting</em> among them
+        under limited supervision.</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="has-text-centered">
+      <h2 class="title is-3 section-pill">Analysis</h2>
+    </div>
+
+    <h3 class="title is-5">Do agents actually use unlabeled data?</h3>
+    <div class="figure-card">
+      <img src="./static/images/varying_unlabel_data.png"
+           alt="Accuracy of the best AgentSSL program on DTD, KITTI and RESISC45 as the amount of unlabeled data grows from one image to 100%">
+    </div>
+    <p class="caption">
+      Fixing the top program and varying only the unlabeled corpus, performance generally improves as more unlabeled
+      data becomes available, so the discovered programs rely on structure in the unlabeled data itself.
+    </p>
+
+    <h3 class="title is-5 mt-6">How do agents use unlabeled data?</h3>
+    <div class="columns">
+      <div class="column is-6">
+        <div class="figure-card">
+          <img src="./static/images/dtd_method_distribution.png"
+               alt="Share of programs using each SSL method family on DTD, broken down by how many other methods they are combined with">
+        </div>
+        <p class="caption">Agents explore a broad range of SSL paradigms and often combine several within one program
+          (DTD, evolutionary search).</p>
+      </div>
+      <div class="column is-6">
+        <div class="figure-card">
+          <img src="./static/images/venn_diagram.png"
+               alt="Venn diagram of overlap between the top 20% most confident pseudolabels of four agent programs on DTD">
+        </div>
+        <p class="caption">Top-20% most confident pseudolabels of four programs on unlabeled DTD: different SSL methods
+          perform well while labeling <em>different</em> images confidently.</p>
+      </div>
+    </div>
+
+    <h3 class="title is-5 mt-6">Do discovered programs transfer across datasets?</h3>
+    <div class="figure-card">
+      <img src="./static/images/dataset_generalization.png"
+           alt="Heatmap of the change in accuracy when the best programs from a source dataset are run on a target dataset">
+    </div>
+    <p class="caption">
+      Rows are source datasets whose best programs are evaluated on each target dataset; values show the change in
+      accuracy relative to in-domain performance.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="has-text-centered">
+      <h2 class="title is-3 section-pill">Real-world ecology</h2>
+    </div>
+    <div class="columns is-vcentered">
+      <div class="column is-7">
+        <div class="figure-card">
+          <img src="./static/images/ecological_agent_results.png"
+               alt="mAP of the ecologist baseline, AgentSL and AgentSSL on the WildFin and BuckTales detection tasks">
+        </div>
+      </div>
+      <div class="column is-5">
+        <p>
+          We evaluate AgentSSL on animal detection from two ecological pipelines, <strong>WildFin</strong> (fish) and
+          <strong>BuckTales</strong> (antelope), against the domain experts' YOLOv8 pipelines using small labeled
+          subsets.
+        </p>
+        <p class="mt-3">
+          On WildFin, agents outperform the low-label expert baseline and approach the full-data pipeline. On
+          BuckTales, they only match the low-label baseline: the expert solution relies on very high-resolution
+          inputs, while agents spend their budget on more complex tiling and SSL strategies.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <!-- TODO: replace with the official citation once the paper is published. -->
+    <pre><code>@misc{lin2026agentssl,
+  title  = {AgentSSL: Can MLE Agents Leverage Unlabeled Data?},
+  author = {Lin, Ethan and Sarkar, Akanksha and Liu, Ziang and Branson, Kristin and Sun, Jennifer},
+  year   = {2026}
+}</code></pre>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <a class="icon-link" href="https://github.com/akanksha-sarkar/AgentSSL">
+        <i class="fab fa-github"></i>
+      </a>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content has-text-centered">
+          <p>
+            Website adapted from the <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a> project page,
+            licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
+            Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
