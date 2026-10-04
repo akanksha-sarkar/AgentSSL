@@ -1,141 +1,116 @@
-/* AgentSSL project page — Nerfies layout, recoloured to match the AgentSSL poster. */
+/* AgentSSL project page — layout/typography after the "Beyond Accuracy" project page,
+   recoloured to match the AgentSSL poster. */
 :root {
   --lavender: #D1DAF9;
-  --lavender-soft: #EEF1FD;
+  --lavender-soft: #F2F4FE;
   --cream: #FFF9D4;
+  --cream-soft: #FFFCEB;
   --purple: #846DA3;
   --purple-dark: #5B477D;
   --gold: #A18600;
-  --ink: #1A1A1A;
+  --ink: #1F1F1F;
+  --body: #3A3A3A;
   --plus: #0B7A3B;
   --minus: #B22222;
 }
 
 body {
-  font-family: 'Inter', 'Noto Sans', sans-serif;
-  color: var(--ink);
+  font-family: 'Noto Sans', sans-serif;
+  color: var(--body);
 }
+
+.title, .subtitle, .publication-title, .publication-authors, .button, .results-table, .callout {
+  font-family: 'Google Sans', 'Noto Sans', sans-serif;
+}
+.title, .content .title { color: var(--ink); font-weight: 500; }
 
 a { color: var(--purple); }
 a:hover { color: var(--purple-dark); }
 
-.title, .subtitle { color: var(--ink); }
+/* ---------- header ---------- */
+.publication-title { font-weight: 500; letter-spacing: -0.01em; }
+.publication-authors a { color: var(--purple) !important; }
+.publication-authors a:hover { text-decoration: underline; }
+.author-block { display: inline-block; }
+.eql-cntrb { font-size: smaller; color: #666; }
 
-.footer {
-  background: var(--lavender-soft);
-}
+.link-block a { margin-top: 5px; margin-bottom: 5px; }
+.publication-links .button.is-dark { background-color: var(--purple-dark); }
+.publication-links .button.is-dark:hover { background-color: var(--purple); }
+.publication-links .button[aria-disabled="true"] { opacity: 0.55; pointer-events: none; }
 
-.footer .icon-link {
-  font-size: 25px;
-  color: var(--purple-dark);
-}
+/* ---------- teaser ---------- */
+.teaser .hero-body { padding-top: 0; padding-bottom: 3rem; }
+.teaser img { display: block; margin: 0 auto 1.5rem; max-width: 52%; height: auto; }
+.teaser .subtitle { font-size: 1.2rem; line-height: 1.6; color: var(--body); }
 
-.link-block a {
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
+/* ---------- full-width section bands ---------- */
+.band { padding: 3.5rem 1.5rem; }
+.band-lavender { background: var(--lavender-soft); }
+.band-cream { background: var(--cream-soft); }
 
-/* Buttons: deep purple instead of Bulma's near-black. */
-.publication-links .button.is-dark {
-  background-color: var(--purple-dark);
+.section-title { margin-bottom: 1.25rem !important; }
+.section-title::after {
+  content: "";
+  display: block;
+  width: 56px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--purple);
+  margin-top: 0.55rem;
 }
-.publication-links .button.is-dark:hover {
-  background-color: var(--purple);
-}
-.publication-links .button[aria-disabled="true"] {
-  opacity: 0.55;
-  pointer-events: none;
-}
+.has-text-centered .section-title::after { margin-left: auto; margin-right: auto; }
 
-.publication-title {
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
+.lead { font-size: 1.1rem; line-height: 1.7; }
+.content p, .content li { line-height: 1.7; }
 
-.publication-authors {
-  font-family: 'Inter', sans-serif;
+.numbered p {
+  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
 }
+.numbered b { color: var(--purple-dark); }
 
-.publication-authors a {
-  color: var(--purple) !important;
+/* ---------- figures ---------- */
+.figure-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 18px rgba(91,71,125,.08);
 }
+.figure-card img { display: block; width: 100%; border-radius: 8px; }
+.caption { font-size: 0.92rem; color: #555; margin-top: 0.75rem; line-height: 1.6; }
+.figure-heading { text-align: center; font-size: 1.15rem; margin: 2rem 0 1rem !important; }
 
-.publication-authors a:hover {
-  text-decoration: underline;
-}
-
-.author-block {
-  display: inline-block;
-}
-
-.equal-contrib {
-  color: #555;
-}
-
-/* TL;DR banner — mirrors the cream key-message bar on the poster. */
-.tldr {
+/* ---------- callout (poster's cream key-message bar) ---------- */
+.callout {
   background: var(--cream);
-  border-radius: 24px;
-  padding: 1.1rem 1.5rem;
+  border-radius: 18px;
+  padding: 1.1rem 1.4rem;
   display: flex;
   gap: 0.9rem;
   align-items: flex-start;
   font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--ink);
 }
-.tldr .icon {
-  color: var(--gold);
-  font-size: 1.4rem;
-  margin-top: 0.1rem;
-}
+.callout .icon { color: var(--gold); font-size: 1.3rem; margin-top: 0.15rem; }
 
-/* Section headers — lavender pill like the poster's figure headers. */
-.section-pill {
-  display: inline-block;
-  background: var(--lavender);
-  border-radius: 999px;
-  padding: 0.35rem 1.4rem;
-  margin-bottom: 1.25rem !important;
-}
-
-.figure-card {
-  background: #fff;
-  border: 3px solid var(--lavender);
-  border-radius: 20px;
-  padding: 1rem;
-}
-.figure-card img {
-  display: block;
-  width: 100%;
-  border-radius: 10px;
-}
-
-.caption {
-  font-size: 0.95rem;
-  color: #444;
-  margin-top: 0.75rem;
-}
-
-.findings li { margin-bottom: 0.4rem; }
-
-/* Results table */
+/* ---------- results table ---------- */
 .results-wrap {
   overflow-x: auto;
-  border: 3px solid var(--lavender);
-  border-radius: 20px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 18px rgba(91,71,125,.08);
 }
 .results-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.results-table th, .results-table td {
-  padding: 0.45rem 0.6rem;
-  text-align: center;
-}
-.results-table thead tr:first-child th { background: var(--lavender); }
+.results-table th, .results-table td { padding: 0.5rem 0.6rem; text-align: center; }
+.results-table thead tr:first-child th { background: var(--lavender); font-weight: 600; color: var(--ink); }
 .results-table thead tr:last-child th {
   background: var(--lavender-soft);
   font-weight: 400;
@@ -143,11 +118,8 @@ a:hover { color: var(--purple-dark); }
   border-bottom: 2px solid var(--ink);
 }
 .results-table thead tr:last-child th:first-child { font-weight: 600; color: var(--ink); }
-.results-table td:first-child, .results-table th:first-child {
-  text-align: left;
-  padding-left: 1rem;
-}
-.results-table .grp { border-left: 2px solid #ddd; }
+.results-table td:first-child, .results-table th:first-child { text-align: left; padding-left: 1rem; }
+.results-table .grp { border-left: 2px solid #e2e2e2; }
 .results-table tbody tr { border-bottom: 1px solid #eee; }
 .results-table tr.agent { background: var(--cream); }
 .results-table tr.agent td:first-child { font-weight: 600; }
@@ -158,7 +130,11 @@ a:hover { color: var(--purple-dark); }
 .results-table .minus { color: var(--minus); }
 .results-table sub, .results-table sup { font-weight: 400; color: #555; }
 
-pre {
-  background: var(--lavender-soft);
-  border-radius: 12px;
+/* ---------- bibtex / footer ---------- */
+pre { background: var(--lavender-soft); border-radius: 12px; }
+.footer { background: var(--lavender-soft); }
+.footer .icon-link { font-size: 25px; color: var(--purple-dark); }
+
+@media screen and (max-width: 768px) {
+  .teaser img { max-width: 100%; }
 }
