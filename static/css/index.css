@@ -46,20 +46,19 @@ a:hover { color: var(--purple-dark); }
 
 /* ---------- full-width section bands ---------- */
 .band { padding: 3.5rem 1.5rem; }
-.band-lavender { background: var(--lavender-soft); }
-.band-cream { background: var(--cream-soft); }
+/* Old look: plain white page; bands kept only as spacing. */
+.band-lavender, .band-cream { background: #fff; }
 
-.section-title { margin-bottom: 1.25rem !important; }
-.section-title::after {
-  content: "";
-  display: block;
-  width: 56px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--purple);
-  margin-top: 0.55rem;
+/* Lavender pill section headers, as on the poster. */
+.section-title {
+  display: table;
+  margin: 0 auto 1.5rem !important;
+  background: var(--lavender);
+  border-radius: 999px;
+  padding: 0.35rem 1.6rem;
+  text-align: center;
 }
-.has-text-centered .section-title::after { margin-left: auto; margin-right: auto; }
+.section-sub { text-align: center; font-size: 1.15rem; color: var(--ink); margin: -0.5rem 0 1.25rem; }
 
 .lead { font-size: 1.1rem; line-height: 1.7; }
 .content p, .content li { line-height: 1.7; }
@@ -75,7 +74,7 @@ a:hover { color: var(--purple-dark); }
   background: #fff;
   border-radius: 18px;
   padding: 1rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 18px rgba(91,71,125,.08);
+  border: 3px solid var(--lavender);
 }
 .figure-card img { display: block; width: 100%; border-radius: 8px; }
 .caption { font-size: 0.92rem; color: #555; margin-top: 0.75rem; line-height: 1.6; }
@@ -100,7 +99,7 @@ a:hover { color: var(--purple-dark); }
   overflow-x: auto;
   background: #fff;
   border-radius: 18px;
-  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 18px rgba(91,71,125,.08);
+  border: 3px solid var(--lavender);
 }
 .results-table {
   width: 100%;
@@ -133,6 +132,7 @@ a:hover { color: var(--purple-dark); }
 /* ---------- bibtex / footer ---------- */
 pre { background: var(--lavender-soft); border-radius: 12px; }
 .footer { background: var(--lavender-soft); }
+.hero .callout { margin-top: 1.25rem; text-align: left; }
 .footer .icon-link { font-size: 25px; color: var(--purple-dark); }
 
 @media screen and (max-width: 768px) {

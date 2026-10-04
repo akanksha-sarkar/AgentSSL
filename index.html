@@ -65,6 +65,12 @@
               </span>
             </div>
           </div>
+
+          <div class="callout">
+            <span class="icon"><i class="fas fa-lightbulb"></i></span>
+            <span><b>TL;DR</b> MLE agents can discover strong programs that leverage unlabeled data, but reliable
+              program selection remains the bottleneck.</span>
+          </div>
         </div>
       </div>
     </div>
@@ -80,8 +86,7 @@
       <h2 class="subtitle has-text-centered">
         MLE agents reduce <b>engineering</b> cost but rely on labeled data; semi-supervised learning reduces
         <b>annotation</b> cost but needs human engineering. We ask whether agents can reduce both, and find they can
-        discover strong programs that leverage unlabeled data, but <b>reliable program selection</b> remains the
-        bottleneck.
+        discover strong programs that leverage unlabeled data.
       </h2>
     </div>
   </div>
@@ -135,7 +140,8 @@
 <!-- ============ Method ============ -->
 <section class="section band band-cream">
   <div class="container is-max-desktop">
-    <h2 class="title is-3 section-title">SSL as Program Search</h2>
+    <h2 class="title is-3 section-title">Method</h2>
+    <p class="section-sub">We frame SSL as a program search problem using LLM-based agents.</p>
     <p class="lead mb-5">
       Given a small labeled set and a larger unlabeled corpus, an LLM-based agent writes SSL programs. Each program is
       scored by an evaluator using either <b>unsupervised SSL metrics</b> or <b>noisy validation</b> feedback, and that
@@ -156,7 +162,8 @@
 <!-- ============ Results ============ -->
 <section class="section band">
   <div class="container is-max-desktop">
-    <h2 class="title is-3 section-title">Can agents beat human-engineered SSL?</h2>
+    <h2 class="title is-3 section-title">Results</h2>
+    <h3 class="title is-4">Can agents beat human-engineered SSL?</h3>
     <p class="lead mb-5">
       Across datasets and shot settings, the best agent solution
       (<span style="color:#A18600;font-weight:700">A<sub>best</sub></span>) is generally comparable to the best
@@ -201,7 +208,8 @@
 <!-- ============ Analysis ============ -->
 <section class="section band band-lavender">
   <div class="container is-max-desktop">
-    <h2 class="title is-3 section-title">Do agents actually use unlabeled data?</h2>
+    <h2 class="title is-3 section-title">Analysis</h2>
+    <h3 class="title is-4">Do agents actually use unlabeled data?</h3>
     <div class="columns is-vcentered">
       <div class="column is-5">
         <p class="lead">
@@ -222,7 +230,7 @@
 
 <section class="section band">
   <div class="container is-max-desktop">
-    <h2 class="title is-3 section-title">How do agents use unlabeled data?</h2>
+    <h3 class="title is-4">How do agents use unlabeled data?</h3>
     <p class="lead mb-5">
       Rather than converging to a single method family, agents explore a broad range of SSL paradigms, from
       pseudo-labeling and consistency regularization to graph-based methods, and often <b>combine</b> several within
@@ -250,7 +258,7 @@
 
 <section class="section band band-lavender">
   <div class="container is-max-desktop">
-    <h2 class="title is-3 section-title">Are programs tailored to their domain?</h2>
+    <h3 class="title is-4">Are programs tailored to their domain?</h3>
     <p class="lead mb-5">
       Agents can discover <b>dataset-specific</b> strategies instead of relying on one fixed SSL recipe. The best
       program for each dataset does not generalize to other datasets, evidence that it is tailored to its own domain.
@@ -298,7 +306,7 @@
 <!-- ============ BibTeX ============ -->
 <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
-    <h2 class="title is-3 section-title">BibTeX</h2>
+    <h2 class="title is-3">BibTeX</h2>
     <!-- TODO: replace with the official citation once the paper is published. -->
     <pre><code>@misc{lin2026agentssl,
   title  = {AgentSSL: Can MLE Agents Leverage Unlabeled Data?},
